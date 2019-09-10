@@ -1,0 +1,11 @@
+﻿TYPE "tEstop"
+VERSION : 0.8
+   STRUCT
+      E : Bool;
+      Q : Bool;
+      Delay : Bool;
+      Reset : Bool;
+   END_STRUCT;
+
+END_TYPE
+

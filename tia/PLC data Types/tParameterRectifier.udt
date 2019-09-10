@@ -1,0 +1,13 @@
+﻿TYPE "tParameterRectifier"
+VERSION : 0.8
+   STRUCT
+      setDelayRamp : Array[0..5] of Int;
+      setDelayTime : Array[0..5] of Int;
+      setVoltage : Array[0..5] of Int;
+      getRamp : Array[0..5] of Int;
+      getTime : Array[0..5] of Int;
+      qtyOfStages : Int;
+   END_STRUCT;
+
+END_TYPE
+

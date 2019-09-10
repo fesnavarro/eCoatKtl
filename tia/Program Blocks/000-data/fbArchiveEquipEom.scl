@@ -1,0 +1,27 @@
+﻿FUNCTION_BLOCK "fbArchiveEquipEom"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      equipmentEom { ExternalWritable := 'False'} : Array[1..5] of "tEquipment";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	(*IF NOT "FirstScan" THEN
+	    REGION saveData
+	        #formatEquipEom := #equipmentEom;
+	        "dataEom".dataEquipEom := #dataEquipEom;
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        #dataEquipEom := "dataEom".dataEquipEom;
+	        #equipmentEom := #formatEquipEom;
+	    END_REGION
+	END_IF;
+ automatically inserted *)
+END_FUNCTION_BLOCK
+

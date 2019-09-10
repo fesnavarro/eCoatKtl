@@ -1,0 +1,72 @@
+﻿FUNCTION "fLightsSound" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      index : "tIndex";
+      action : REF_TO "tAction";
+      equipmentConveyor : REF_TO "tEquipment";
+      equipmentEom : REF_TO "tEquipment";
+      ic : Int;
+      iq : Int;
+      ambarLightOn : Bool;
+   END_VAR
+
+
+BEGIN
+	#action := REF("dbData".action);
+	    
+	#index.qty := 5;
+	REGION lightRed
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "dbUtilities".feedbackLights.setConfig := 2;
+	        "dbUtilities".feedbackLights.setSignal := "dbMonitoring".generalFailureDected;
+	        "dbUtilities".feedbackLights.setDelayUp := 500;
+	        "dbUtilities".feedbackLights.setDelayDown := 500;
+	        "fStatus"("dbUtilities".feedbackLights);
+	        #action^.red[#index.acc].signal := "dbUtilities".feedbackLights.getStatus;
+	    END_FOR;
+	END_REGION
+	
+	REGION lightGreen
+	    FOR #index.acc := 1 TO #index.qty DO
+	        #action^.green[#index.acc].signal := NOT "dbMonitoring".generalFailureDected;
+	    END_FOR;
+	END_REGION
+	
+	REGION lightAmbar
+	    "fSizeArray"(size => #iq,
+	                 io_Array := "dbArchiveEquipConveyor".equipmentConveyor);
+	    FOR #ic := 1 TO #iq DO
+	        #equipmentConveyor := REF("dbArchiveEquipConveyor".equipmentConveyor[#ic]);
+	        IF #equipmentConveyor^.autoRun.getStsAutoRun THEN
+	            #ambarLightOn := TRUE;
+	        END_IF;
+	    END_FOR;
+	    
+	    "fSizeArray"(size => #iq,
+	                 io_Array := "dbArchiveEquipEom".equipmentEom);
+	    FOR #ic := 1 TO #iq DO
+	        #equipmentEom := REF("dbArchiveEquipEom".equipmentEom[#ic]);
+	        IF #equipmentEom^.autoRun.getStsAutoRun THEN
+	            #ambarLightOn := TRUE;
+	        END_IF;
+	    END_FOR;
+	    
+	    FOR #index.acc := 1 TO #index.qty DO
+	        #action^.ambar[#index.acc].signal :=#ambarLightOn;
+	    END_FOR;
+	END_REGION
+	
+	REGION sound
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "dbUtilities".feedbackSound.setConfig := 2;
+	        "dbUtilities".feedbackSound.setSignal := "dbMonitoring".generalSound;
+	        "dbUtilities".feedbackSound.setDelayUp := 500;
+	        "dbUtilities".feedbackSound.setDelayDown := 500;
+	        "fStatus"("dbUtilities".feedbackSound);
+	        
+	        #action^.sound[#index.acc].signal := "dbUtilities".feedbackSound.getStatus;
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveEquipShipping"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveEquipShipping"
+
+BEGIN
+
+END_DATA_BLOCK
+

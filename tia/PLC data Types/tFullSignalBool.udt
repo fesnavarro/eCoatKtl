@@ -1,0 +1,11 @@
+﻿TYPE "tFullSignalBool"
+VERSION : 0.8
+   STRUCT
+      pulse : "tPulseOnRise";
+      status : "tStatus";
+      i : Int;
+      signal : Bool;
+   END_STRUCT;
+
+END_TYPE
+

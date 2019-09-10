@@ -1,0 +1,27 @@
+﻿FUNCTION "oDMain" : Void
+TITLE = oDMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '3000'
+VERSION : 0.8
+//main control door
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipDoor".equipmentDoor);
+	#location := 2060;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fDoor"(location := #location,
+	            index := #index);
+	END_FOR;
+END_FUNCTION
+

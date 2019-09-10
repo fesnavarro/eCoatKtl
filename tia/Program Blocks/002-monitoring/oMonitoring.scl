@@ -1,0 +1,227 @@
+﻿FUNCTION "oMonitoring" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      index : "tIndex";
+      range : Int;
+      ia : Int;
+      ib : Int;
+      control : REF_TO "tControl";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	REGION generalFailure
+	    FOR #ib := 1 TO 25 DO
+	        IF "dbMonitoring".i > 1000 THEN
+	            "dbMonitoring".i := 0;
+	            "dbMonitoring".notCleared := FALSE;
+	            "dbMonitoring".noise := FALSE;
+	            FOR #ia := 1 TO 1000 DO
+	                IF "dbMonitoring".monitoringFailure[#ia] THEN
+	                    "dbMonitoring".notCleared := TRUE;
+	                END_IF;
+	                "dbMonitoring".generalFailureDected := "dbMonitoring".notCleared;
+	                IF "dbMonitoring".soundActive[#ia] THEN
+	                    "dbMonitoring".noise := TRUE;
+	                END_IF;
+	                "dbMonitoring".generalSound := "dbMonitoring".noise;
+	                
+	            END_FOR;
+	        END_IF;
+	        
+	        "dbMonitoring".i += 1;
+	        
+	        CASE "dbMonitoring".i OF
+	            1:
+	                #index.qty := #actual^.circuitBreaker[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            101:
+	                #index.qty := #actual^.minimumSafetyLevel[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            126:
+	                #index.qty := #actual^.maximumSafetyLevel[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            151:
+	                #index.qty := #actual^.safetyContactorFeedback[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            201:
+	                #index.qty := #actual^.powerFailure[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            251:
+	                #index.qty := #actual^.eletronicCircuitBreaker[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            301:
+	                #index.qty := #actual^.heatingResistorFailure[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            351:
+	                #index.qty := #actual^.burnerFailure[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	
+	            401:
+	                #index.qty := #actual^.temperatureOven[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	
+	            451:
+	                #index.qty := #actual^.chillerFailure[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            501:
+	                #index.qty := #actual^.airConditioningFailure[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            551:
+	                #index.qty := 17;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty - 1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            601:
+	                #index.qty := 6;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            651:
+	                #index.qty := 3;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            701:
+	                #index.qty := 4;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	                
+	            751:
+	                #index.qty := #actual^.netDiag[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            801:
+	                "fSizeArray"(size => #index.qty,
+	                             io_Array := "dbArchiveControlTank".controlTank);
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            826:
+	                "fSizeArray"(size => #index.qty,
+	                             io_Array := "dbArchiveControlTank".controlTank);
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            851:
+	                #index.qty := #actual^.safetyCrashCar[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            856:
+	                #index.qty := #actual^.proximitySensor[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            871:
+	                #index.qty := #actual^.advancedADoor[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty-1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            881:
+	                "fSizeArray"(size => #index.qty,
+	                             io_Array := "dbArchiveControlDoor".controlDoor);
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty - 1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            901:
+	                "fSizeArray"(size => #index.qty,
+	                             io_Array := "dbArchiveSlotTank".SlotTank);
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty - 1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            926:
+	                #index.qty := #actual^.skidDetectedBShipping[0].i;
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty - 1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            931:
+	                "fSizeArray"(size => #index.qty,
+	                             io_Array := "dbArchiveAutoEom".autoEom);
+	                #range := "dbMonitoring".i;
+	                FOR #index.acc := #range TO (#range + #index.qty - 1) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            941:
+	                #range := "dbMonitoring".i; //Estop
+	                FOR #index.acc := #range TO (#range + 8) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            951:
+	                #range := "dbMonitoring".i;//lightCourtin
+	                FOR #index.acc := #range TO (#range + 8) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	            961:
+	                #range := "dbMonitoring".i;//reset
+	                FOR #index.acc := #range TO (#range + 8) DO
+	                    "fMCheck"(#index);
+	                END_FOR;
+	        END_CASE;
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

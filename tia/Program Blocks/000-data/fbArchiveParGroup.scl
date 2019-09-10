@@ -1,0 +1,11 @@
+﻿FUNCTION_BLOCK "fbArchiveParGroup"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR RETAIN
+      preHeating : Array[1..5] of "tPreHeating";
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

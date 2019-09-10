@@ -1,0 +1,368 @@
+﻿FUNCTION "fInterface" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      ia : Int;
+      parOven : REF_TO "tParameterOven";
+      parDoor : REF_TO "tParameterDoor";
+      parExhaust : REF_TO "tParameterExhaust";
+      parEom : REF_TO "tParameterEom";
+      parTank : REF_TO "tParameterTank";
+      parConveyor : REF_TO "tParameterConveyor";
+      parBoiler : REF_TO "tParameterBoiler";
+      parRectifier : REF_TO "tParameterRectifier";
+      autoTank : REF_TO "tAutoTank";
+      autoOven : REF_TO "tAutoOven";
+      autoConveyor : REF_TO "tAutoConveyor";
+      autoExhaust : REF_TO "tAutoExhaust";
+      autoDoor : REF_TO "tAutoDoor";
+      autoBoiler : REF_TO "tAutoBoiler";
+      autoRectifier : REF_TO "tAutoRectifier";
+      autoEom : REF_TO "tAutoEom";
+      recipes : REF_TO "tRecipes";
+      autoShipping : REF_TO "tAutoShipping";
+      slotEom : REF_TO "tSlot";
+      ib : Int;
+      failure : REF_TO "tFailure";
+      data : REF_TO "tData";
+      id : Int;
+      ic : Int;
+      ih : Int;
+      it : Int;
+      parGroup : REF_TO "tPreHeating";
+      skid : REF_TO "tSkid";
+      slotShipping : REF_TO "tSlot";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	//1 ECOAT
+	//2 CARGA
+	//3 
+	//4 ELIPSE SERVER
+	//5 REMOTE
+	
+	FOR #i := 1 TO 5 DO
+	    #interface := REF("dbInterface".interface[#i]);
+	    REGION clearOthersSelectionsByPriority
+	        FOR #ic := #i + 1 TO 6 DO
+	            IF "dbInterface".interface[#i].equipamentId = "dbInterface".interface[#ic].equipamentId THEN
+	                "dbInterface".interface[#ic].equipamentId := 0;
+	            END_IF;
+	        END_FOR;
+	    END_REGION
+	    
+	    REGION limits
+	        IF "dbParRecipes".index.acc < 1 OR "dbParRecipes".index.acc > 10 THEN
+	            "dbParRecipes".index.acc := 1;
+	        END_IF;
+	        IF "dbInterface".interface[#i].failureId < 1 THEN
+	            "dbInterface".interface[#i].failureId := 1;
+	        END_IF;
+	        IF "dbInterface".interface[#i].failureId > 1000 THEN
+	            "dbInterface".interface[#i].failureId := 1000;
+	        END_IF;
+	    END_REGION
+	    
+	    REGION hideOpMenu
+	        #interface^.auxStatus[1].setConfig := 0;
+	        #interface^.auxStatus[1].setDelayUp := 4000;
+	        #interface^.auxStatus[1].setDelayDown := 500;
+	        #interface^.auxStatus[1].setSignal := #interface^.auxBool[1] OR #interface^.auxBool[2];
+	        "fStatus"(#interface^.auxStatus[1]);
+	        IF #interface^.auxStatus[1].getStatus OR
+	            #interface^.structureScreen.index.acc <> #interface^.auxDInt[1] THEN
+	            #interface^.auxBool[1] := FALSE;
+	            #interface^.auxBool[2] := FALSE;
+	        END_IF;
+	    END_REGION
+	    
+	    REGION hideCommand
+	        #interface^.auxStatus[2].setConfig := 0;
+	        #interface^.auxStatus[2].setDelayUp := 0;
+	        #interface^.auxStatus[2].setDelayDown := 1200;
+	        #interface^.auxStatus[2].setSignal := FALSE;
+	        "fStatus"(#interface^.auxStatus[2]);
+	        #interface^.found := #interface^.auxStatus[2].getStatus;
+	    END_REGION
+	    
+	    REGION load
+	        
+	        IF NOT ("dbParRecipes".index.acc = #interface^.auxDInt[2]) THEN
+	            #recipes := REF("dbParRecipes".parRecipes["dbParRecipes".index.acc]);
+	            #interface^.recipes := #recipes^;
+	            #interface^.auxDInt[2] := "dbParRecipes".index.acc;
+	        END_IF;
+	        
+	        IF #interface^.auxBool[5] THEN
+	            #interface^.pulseOnRise[2].setSignal := TRUE;
+	        ELSE
+	            #interface^.pulseOnRise[2].setSignal := FALSE;
+	        END_IF;
+	        "fPulseOnRise"(#interface^.pulseOnRise[2]);
+	        IF #interface^.pulseOnRise[2].getSignal THEN
+	            CASE #interface^.auxDInt[5] OF
+	                -1:
+	                    #data := REF("dbArchiveSlotShipping".slotShipping[1].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                1..17:
+	                    #data := REF("dbArchiveSlotTank".SlotTank[#interface^.auxDInt[5]].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                18..20:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 17].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                21..25:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[3].slot[#interface^.auxDInt[5] - 19].info.data);
+	                    #interface^.info.data := #data^;
+	                26:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 22].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                27..29:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[4].slot[#interface^.auxDInt[5] - 25].info.data);
+	                    #interface^.info.data := #data^;
+	                30..31:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 25].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                32..38:
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[#interface^.auxDInt[5] - 30].info.data);
+	                    #interface^.info.data := #data^;
+	                39:
+	                    #data := REF("dbArchiveSlotShipping".slotShipping[2].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	                51..55:
+	                    #data := REF("dbArchiveSlotEom".slotEom[#interface^.auxDInt[5] - 50].slot[1].info.data);
+	                    #interface^.info.data := #data^;
+	            END_CASE;
+	        END_IF;
+	        
+	        IF NOT (#interface^.structureScreen.index.acc = #interface^.auxDInt[1]) THEN
+	            CASE #interface^.structureScreen.index.acc OF
+	                    
+	                1410:
+	                    #data := REF("dbArchiveSlotShipping".slotShipping[1].slot[1].info.data);
+	                    #skid := REF("dbBuffer".skid[#data^.#skid]);
+	                    #recipes := REF("dbParRecipes".parRecipes[#skid^.recipe]);
+	                    #interface^.recipes.description := #recipes^.description;
+	                4001..4008:
+	                    IF ("dbParRecipes".index.acc = #interface^.auxDInt[2]) THEN
+	                        #recipes := REF("dbParRecipes".parRecipes["dbParRecipes".index.acc]);
+	                        #interface^.recipes := #recipes^;
+	                    END_IF;
+	                1502:
+	                    IF NOT ("dbInterface".interface[#i].failureId = #interface^.auxDInt[3]) THEN
+	                        #failure := REF("dbMonitoring".failure["dbInterface".interface[#i].failureId]);
+	                        #interface^.failure := #failure^;
+	                        #interface^.auxDInt[3] := "dbInterface".interface[#i].failureId;
+	                    END_IF;
+	                2001:
+	                    FOR #ia := 1 TO 5 DO
+	                        #parEom := REF("dbArchiveParEom".parEom[#ia]);
+	                    END_FOR;
+	                3001:
+	                    FOR #ia := 1 TO 1 DO
+	                        #parBoiler := REF("dbParBoiler".parBoiler[#ia]);
+	                        #interface^.parBoiler[#ia] := #parBoiler^;
+	                    END_FOR;
+	                    FOR #ia := 1 TO 25 DO
+	                        #parTank := REF("dbParTank".parTank[#ia]);
+	                        #interface^.parTank[#ia] := #parTank^;
+	                    END_FOR;
+	                3002:
+	                    FOR #ia := 1 TO 4 DO
+	                        #parOven := REF("dbParOven".parOven[#ia]);
+	                        #interface^.parOven[#ia] := #parOven^;
+	                    END_FOR;
+	                3003:
+	                    FOR #ia := 1 TO 3 DO
+	                        #parExhaust := REF("dbParExhaust".parExhaust[#ia]);
+	                        #interface^.parExhaust[#ia] := #parExhaust^;
+	                    END_FOR;
+	                3004:
+	                    FOR #ia := 1 TO 5 DO
+	                        #parGroup := REF("dbArchiveParGroup".preHeating[#ia]);
+	                        #interface^.parGroup[#ia] := #parGroup^;
+	                    END_FOR;
+	            END_CASE;
+	
+	            #interface^.auxDInt[1] := #interface^.structureScreen.index.acc;
+	        ELSE
+	            CASE #interface^.structureScreen.index.acc OF
+	                1410:
+	                    #data := REF("dbArchiveSlotShipping".slotShipping[1].slot[1].info.data);
+	                    #skid := REF("dbBuffer".skid[#data^.skid]);
+	                    #recipes := REF("dbParRecipes".parRecipes[#skid^.recipe]);
+	                    #interface^.recipes.description := #recipes^.description;
+	            END_CASE;
+	        END_IF;
+	    END_REGION
+	    
+	    REGION set value
+	        #interface^.pulseOnRise[1].setSignal := #interface^.structureScreen.set;
+	        "fPulseOnRise"(#interface^.pulseOnRise[1]);
+	        IF #interface^.pulseOnRise[1].getSignal THEN
+	            CASE #interface^.structureScreen.index.acc OF
+	                1410:
+	                    FOR #ia := 1 TO 2 DO
+	                        #autoShipping := REF("dbArchiveAutoShipping".autoShipping[#ia]);
+	                    END_FOR;
+	                1502:
+	                    #failure := REF("dbMonitoring".failure[#interface^.failureId]);
+	                    #failure^ := #interface^.failure;
+	                3001:
+	                    FOR #ia := 1 TO 1 DO
+	                        #parBoiler := REF("dbParBoiler".parBoiler[#ia]);
+	                        
+	                        #parBoiler^.setPointTemp :=
+	                        #interface^.parBoiler[#ia].setPointTemp;
+	                        
+	                        #parBoiler^.tempInOffset :=
+	                        #interface^.parBoiler[#ia].tempInOffset;
+	                        
+	                        #parBoiler^.tempOutOffset :=
+	                        #interface^.parBoiler[#ia].tempOutOffset;
+	                        
+	                        #parBoiler^.hysteresisOnTemp :=
+	                        #interface^.parBoiler[#ia].hysteresisOnTemp;
+	                        
+	                        #parBoiler^.hysteresisOffTemp :=
+	                        #interface^.parBoiler[#ia].hysteresisOffTemp;
+	                    END_FOR;
+	                    FOR #ia := 1 TO 14 DO
+	                        #parTank := REF("dbParTank".parTank[#ia]);
+	                        
+	                        #parTank^.setPointTemp :=
+	                        #interface^.parTank[#ia].setPointTemp;
+	                        
+	                        #parTank^.temperatureOffset :=
+	                        #interface^.parTank[#ia].temperatureOffset;
+	                        
+	                        #parTank^.hysteresisOnTemp :=
+	                        #interface^.parTank[#ia].hysteresisOnTemp;
+	                        
+	                        #parTank^.hysteresisOffTemp :=
+	                        #interface^.parTank[#ia].hysteresisOffTemp;
+	                    END_FOR;
+	                3002:
+	                    FOR #ia := 1 TO 4 DO
+	                        #parOven := REF("dbParOven".parOven[#ia]);
+	                        
+	                        #parOven^.setPointTemp :=
+	                        #interface^.parOven[#ia].setPointTemp;
+	                        
+	                        #parOven^.tempOffset :=
+	                        #interface^.parOven[#ia].tempOffset;
+	                        
+	                        #parOven^.hysteresisOnTemp :=
+	                        #interface^.parOven[#ia].hysteresisOnTemp;
+	                        
+	                        #parOven^.hysteresisOffTemp :=
+	                        #interface^.parOven[#ia].hysteresisOffTemp;
+	                        
+	                        #parOven^.hysteresisStageOne :=
+	                        #interface^.parOven[#ia].hysteresisStageOne;
+	                    END_FOR;
+	                3003:
+	                    FOR #ia := 1 TO 3 DO
+	                        #parExhaust := REF("dbParExhaust".parExhaust[#ia]);
+	                        
+	                        #parExhaust^.setPointTemp :=
+	                        #interface^.parExhaust[#ia].setPointTemp;
+	                    END_FOR;
+	                    FOR #ia := 1 TO 17 DO
+	                        #parTank := REF("dbParTank".parTank[#ia]);
+	                        
+	                        #parTank^.timeOpenReplacement :=
+	                        #interface^.parTank[#ia].timeOpenReplacement;
+	                        
+	                        #parTank^.timeBreakReplacement :=
+	                        #interface^.parTank[#ia].timeBreakReplacement;
+	                    END_FOR;
+	                3004:
+	                    FOR #ia := 1 TO 5 DO
+	                        #parGroup := REF("dbArchiveParGroup".preHeating[#ia]);
+	                        #parGroup^ := #interface^.parGroup[#ia];
+	                    END_FOR;
+	                4001..4008:
+	                    #recipes := REF("dbParRecipes".parRecipes["dbParRecipes".index.acc]);
+	                    #recipes^ := #interface^.recipes;
+	            END_CASE;
+	        END_IF;
+	        
+	        IF #interface^.auxBool[4] THEN
+	            CASE #interface^.structureScreen.index.acc OF
+	                1001:
+	                    CASE #interface^.auxDInt[5] OF
+	                        -1:
+	                            #data := REF("dbArchiveSlotShipping".slotShipping[1].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        1..17:
+	                            #data := REF("dbArchiveSlotTank".SlotTank[#interface^.auxDInt[5]].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        18..20:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 17].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        21..25:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[3].slot[#interface^.auxDInt[5] - 19].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        26:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 22].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        27..29:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[4].slot[#interface^.auxDInt[5] - 25].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        30..31:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[#interface^.auxDInt[5] - 25].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        32..38:
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[#interface^.auxDInt[5] - 30].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        39:
+	                            #data := REF("dbArchiveSlotShipping".slotShipping[2].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                        51..55:
+	                            #data := REF("dbArchiveSlotEom".slotEom[#interface^.auxDInt[5] - 50].slot[1].info.data);
+	                            #skid := REF("dbBuffer".skid[#data^.skid]);
+	                            #data^ := #interface^.info.data;
+	                            #skid^.recipe := #data^.recipe;
+	                    END_CASE;
+	            END_CASE;
+	            #interface^.auxBool[4] := FALSE;
+	        END_IF;
+	        IF #interface^.structureScreen.index.acc = 1410 THEN
+	            #slotShipping := REF("dbArchiveSlotShipping".slotShipping[1].slot[1]);
+	            IF #slotShipping^.info.data.skid <> 0 THEN
+	                #skid := REF("dbBuffer".skid[#slotShipping^.info.data.skid]);
+	                #skid^.recipe := #interface^.skid.recipe;
+	            ELSE
+	                #interface^.skid.recipe := 0;
+	            END_IF;
+	        END_IF;
+	    END_REGION
+	END_FOR;
+END_FUNCTION
+

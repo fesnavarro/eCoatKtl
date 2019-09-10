@@ -1,0 +1,38 @@
+﻿FUNCTION "fMCheck" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+
+BEGIN
+	"fMfailure"(index := #index,
+	            failure := "dbMonitoring".failure[#index.acc]);
+	
+	IF NOT "dbMonitoring".failure[#index.acc].generalDisable AND
+	    "dbMonitoring".failure[#index.acc].getFailureDetected THEN
+	    "dbMonitoring".monitoringFailure[#index.acc] := TRUE;
+	ELSE
+	    "dbMonitoring".monitoringFailure[#index.acc] := FALSE;
+	END_IF;
+	
+	IF  (*"dbArchiveMonitoring".dataFailure <> "dbArchiveMonitoring".knowloge AND*)
+	    NOT "dbMonitoring".failure[#index.acc].generalDisable AND
+	    NOT "dbMonitoring".failure[#index.acc].soundDisable AND
+	    "dbMonitoring".failure[#index.acc].getFailureDetected THEN
+	    "dbMonitoring".soundActive[#index.acc] := TRUE;
+	ELSE
+	    "dbMonitoring".soundActive[#index.acc] := FALSE;
+	END_IF;
+	(*
+	IF "dbArchiveMonitoring".dataFailure <> "dbArchiveMonitoring".knowloge AND
+	    "dbMonitoring".failure[#index.acc].getFailureDetected AND
+	    ("dbMonitoring".failure[#index.acc].group.priority10 = 0) THEN
+	    "dbMonitoring".soundActive[#index.acc] := TRUE;
+	ELSE
+	    "dbMonitoring".soundActive[#index.acc] := FALSE;
+	END_IF;
+ automatically inserted *)
+END_FUNCTION
+

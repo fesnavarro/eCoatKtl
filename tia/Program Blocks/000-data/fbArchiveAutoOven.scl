@@ -1,0 +1,27 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoOven"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      autoOven { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..4] of "tAutoOven";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	(*IF NOT "FirstScan" THEN
+	    REGION saveData
+	        #formatAutoOven := #autoOven;
+	        "dataOven".dataAutoOven := #dataAutoOven;
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        #dataAutoOven := "dataOven".dataAutoOven;
+	        #autoOven := #formatAutoOven;
+	    END_REGION
+	END_IF;
+ automatically inserted *)
+END_FUNCTION_BLOCK
+

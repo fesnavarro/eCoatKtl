@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveAutoExhaust"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveAutoExhaust"
+
+BEGIN
+
+END_DATA_BLOCK
+

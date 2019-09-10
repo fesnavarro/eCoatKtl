@@ -1,0 +1,8 @@
+﻿TYPE "tSafetyAction"
+VERSION : 0.8
+   STRUCT
+      safetyContactor : Bool;
+   END_STRUCT;
+
+END_TYPE
+

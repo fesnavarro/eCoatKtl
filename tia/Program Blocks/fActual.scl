@@ -1,0 +1,2268 @@
+﻿FUNCTION "fActual" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      parOven : REF_TO "tParameterOven";
+      parDoor : REF_TO "tParameterDoor";
+      parExhaust : REF_TO "tParameterExhaust";
+      parEom : REF_TO "tParameterEom";
+      parTank : REF_TO "tParameterTank";
+      parConveyor : REF_TO "tParameterConveyor";
+      parBoiler : REF_TO "tParameterBoiler";
+      parRectifier : REF_TO "tParameterRectifier";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      tempBool : Bool;
+      tempInt : Int;
+      tempWord : Word;
+      i : Int;
+      control : REF_TO "tControl";
+      slot : REF_TO "tSlot";
+      autoConveyor : REF_TO "tAutoConveyor";
+      ia : Int;
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	REGION reset acc
+	    #actual^.circuitBreaker[0].i := 0;
+	    #actual^.resetFailure[0].i := 0;
+	    #actual^.minimumSafetyLevel[0].i := 0;
+	    #actual^.maximumSafetyLevel[0].i := 0;
+	    #actual^.maximumLevel[0].i := 0;
+	    #actual^.minimumLevel[0].i := 0;
+	    #actual^.returnedADoor[0].i := 0;
+	    #actual^.advancedADoor[0].i := 0;
+	    #actual^.returnedBDoor[0].i := 0;
+	    #actual^.advancedBDoor[0].i := 0;
+	    #actual^.temperatureOven[0].i := 0;
+	    #actual^.temperatureInBoiler[0].i := 0;
+	    #actual^.temperatureOutBoiler[0].i := 0;
+	    #actual^.temperatureTank[0].i := 0;
+	    #actual^.rightArrow[0].i := 0;
+	    #actual^.leftArrow[0].i := 0;
+	    #actual^.downArrow[0].i := 0;
+	    #actual^.upArrow[0].i := 0;
+	    #actual^.skidDetectedATank[0].i := 0;
+	    #actual^.skidDetectedAConveyor[0].i := 0;
+	    #actual^.skidDetectedAShipping[0].i := 0;
+	    #actual^.resetSafety[0].i := 0;
+	    #actual^.confirmSetupTranslation[0].i := 0;
+	    #actual^.confirmTriggerGearmotorLift[0].i := 0;
+	    #actual^.confirmTriggerGearmotorTranslation[0].i := 0;
+	    #actual^.slowdownDescentLift[0].i := 0;
+	    #actual^.slowdownClimbLift[0].i := 0;
+	    #actual^.slowdownGoTranslation[0].i := 0;
+	    #actual^.slowdownBackTranslation[0].i := 0;
+	    #actual^.positionStopTranslationTank[0].i := 0;
+	    #actual^.limitMinimumDescentLift[0].i := 0;
+	    #actual^.limitMaximumClimbLift[0].i := 0;
+	    #actual^.limitMiddleDescentLift[0].i := 0;
+	    #actual^.maximumSafetyTranslation[0].i := 0;
+	    #actual^.minimumSafetyTranslation[0].i := 0;
+	    #actual^.safetyCrashCar[0].i := 0;
+	    #actual^.vibrationSensor[0].i := 0;
+	    #actual^.conductivitySensor[0].i := 0;
+	    #actual^.phMeter[0].i := 0;
+	    #actual^.heatingResistorFailure[0].i := 0;
+	    #actual^.burnerFailure[0].i := 0;
+	    #actual^.chillerFailure[0].i := 0;
+	    #actual^.skidDetectedBConveyor[0].i := 0;
+	    #actual^.skidDetectedCConveyor[0].i := 0;
+	    #actual^.skidDetectedDConveyor[0].i := 0;
+	    #actual^.skidDetectedEConveyor[0].i := 0;
+	    #actual^.skidDetectedFConveyor[0].i := 0;
+	    #actual^.skidDetectedBShipping[0].i := 0;
+	    #actual^.skidDetectedCShipping[0].i := 0;
+	    #actual^.eletronicCircuitBreaker[0].i := 0;
+	    #actual^.powerFailure[0].i := 0;
+	    #actual^."remote"[0].i := 0;
+	    #actual^.thermostatIndication[0].i := 0;
+	    #actual^.stopMotion[0].i := 0;
+	    #actual^.safetyContactorFeedback[0].i := 0;
+	    #actual^.pressureTransmitter[0].i := 0;
+	    #actual^.airConditioningFailure[0].i := 0;
+	    #actual^.flowIndicator[0].i := 0;
+	    #actual^.electricCurrent[0].i := 0;
+	    #actual^.advancedConveyor[0].i := 0;
+	    #actual^.returnedConveyor[0].i := 0;
+	    #actual^.consumptionMeter[0].i := 0;
+	    #actual^.resistorPowerController[0].i := 0;
+	    #actual^.remoteFastModeFR[0].i := 0;
+	    #actual^.remoteFastModeUD[0].i := 0;
+	    #actual^.inversorFailureDetectedTank[0].i := 0;
+	    #actual^.inversorFailureDetectedDoor[0].i := 0;
+	    #actual^.inversorFailureDetectedExhaust[0].i := 0;
+	    #actual^.inversorFailureDetectedConveyor[0].i := 0;
+	    #actual^.netDiag[0].i := 0;
+	    #actual^.tankTelegramRecirculation[0].i := 0;
+	    #actual^.tankTelegramFilter[0].i := 0;
+	    #actual^.conveyorTelegram[0].i := 0;
+	    #actual^.doorTelegram[0].i := 0;
+	    #actual^.exhaustTelegram[0].i := 0;
+	    #actual^.proximitySensor[0].i := 0;
+	    #actual^.conveyorEncoder[0].i := 0;
+	END_REGION
+	REGION telegramRecirculation
+	    #actual^.tankTelegramRecirculation[0].i += 1;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address :=
+	    "pre15V1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 1;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "pre16V1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 3;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "pre18V1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 1;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "pre20V1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 2;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "pre22V1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 6;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "ecoat8v1~PROFINET_interface~Standard_telegram_1";
+	    
+	    #actual^.tankTelegramRecirculation[0].i += 1;
+	    #actual^.tankTelegramRecirculation[#actual^.tankTelegramRecirculation[0].i].address  :=
+	    "ecoat9v1~PROFINET_interface~Standard_telegram_1";
+	END_REGION
+	REGION telegramFilter
+	    #actual^.tankTelegramFilter[0].i += 14;
+	    #actual^.tankTelegramFilter[#actual^.tankTelegramFilter[0].i].address  :=
+	    "ecoat8v2~PROFINET_interface~Standard_telegram_1";
+	END_REGION
+	REGION netDiag
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "Local~Device";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat25a1~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "oven26a1~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "eom9a1_1~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "eom9a1_2~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "eom9a1_3~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "eom9a1_4~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "eom9a1_5~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat8v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat8v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat8v2~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat9v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat10v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "ecoat10v2~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "oven11v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "oven11v2~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "oven11v2~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "oven12v1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre15V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre16V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre17v1~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre17v2~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre18V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre20V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre22V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	    
+	    #actual^.netDiag[0].i += 1;
+	    #actual^.netDiag[#actual^.netDiag[0].i]._laddr :=
+	    "pre24V1~PROFINET_interface~IODevice";
+	    #actual^.netDiag[#actual^.netDiag[0].i].mode := 2;
+	    "fDiag"(#actual^.netDiag[#actual^.netDiag[0].i]);
+	END_REGION
+	REGION safetyContactorFeedback
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=ecoat-46K1:.2"; //FEEDBACK CONTATOR DE SEGURANÇA 01
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=ecoat-46K2:.2"; //FEEDBACK CONTATOR DE SEGURANÇA 02
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=ecoat-46K3:.2"; //FEEDBACK CONTATOR DE SEGURANÇA 03
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=ecoat-46K4:.2"; //FEEDBACK CONTATOR DE SEGURANÇA 04
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=pre-78K1:.2";//FEEDBACK CONTATOR DE SEGURANÇA 01
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=pre-78K2:.2";//FEEDBACK CONTATOR DE SEGURANÇA 02
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=pre-78K3:.2";//FEEDBACK CONTATOR DE SEGURANÇA 03
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=pre-78K4:.2";//FEEDBACK CONTATOR DE SEGURANCA 04
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=oven-41k1:22";//FEEDBACK CONTATOR DE SEGURANCA 01
+	    #actual^.safetyContactorFeedback[0].i += 1;
+	    #actual^.safetyContactorFeedback[#actual^.safetyContactorFeedback[0].i].signal :=
+	    "=oven-41k2:22";//FEEDBACK CONTATOR DE SEGURANCA 01
+	END_REGION
+	REGION circuitBreaker
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-24Q1:22";//SOBRECARGA MOTOREDUTOR ESTEIRA 06 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-24F1:22";//SOBRECARGA FREIO MOTOREDUTOR ESTEIRA 06 ESTUFA DE CURA
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-15F2:22";//SOBRECARGA BOMBA DOSADORA TANQUE 01 DESENGRAXE 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-16F1:22";//SOBRECARGA  BOMBA DOSADORA TANQUE 02 DESENGRAXE 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-18F1:22";//SOBRECARGA BOMBA DOSADORA TANQUE 05 DECAPANTE 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-20F1:22";//SOBRECARGA BOMBA DOSADORA TANQUE 06 DECAPANTE 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-22F1:2";//SOBRECARGA BOMBA DOSADORA TANQUE 08 NEUTRALIZADOR
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-23F2:22";//SOBRECARGA BOMBA DOSADORA DE FOSFATO TANQUE 11
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-23F1:22";//SOBRECARGA BOMBA DOSADORA ACELERADOR TANQUE 11
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-22Q4:22";//SOBRECARGA BOMBA CIRCULAÇÃO TANQUE 10 ENXÁGUE 05
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-22Q1:22";//SOBRECARGA BOMBA CIRCULAÇÃO TANQUE 07 ENXÁGUE 03
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-22Q3:22";//SOBRECARGA BOMBA CIRCULAÇÃO TANQUE 09 ENXÁGUE 04
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-23Q2:22";//SOBRECARGA BOMBA CIRCULAÇÃO TANQUE 12 ENXÁGUE 06
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-23Q3:22";//SOBRECARGA BOMBA CIRCULAÇÃO TANQUE 13 ENXÁGUkE 07
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-16Q6:22";//SOBRECARGA BOMBA TANQUE 03 ENXÁGUE 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-17Q1:22";//SOBRECARGA BOMBA TANQUE 04 ENXÁGUE 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-17Q2:22";//SOBRECARGA BOMBA 21 ASPERSÃO LAVADOR DE GASES
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-8Q3:18";//SOBRECARGA BOMBA TANQUE 24 RESERVA TINTA KTL
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-8Q4:22";//SOBRECARGA BOMBA DE TRANSFERÊNCIA ANOLITO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-8Q5:22";//SOBRECARGA BOMBA 18 TANQUE DE LAVAÇÃO U.F
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-9Q4:22";//SOBRECARGA BOMBA HIDRAULICA MESA ELEVADORA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-9Q3:22";//SOBRECARGA BOMBA 17 RECIRCULADO UF03
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-9Q2:22";//SOBRECARGA BOMBA 16 RECIRCULADO UF02
+	    
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-16Q1:22";//SOBRECARGA ALIMENTAÇÃO BOMBA TANQUE 19 SEPARADOR DE ÓLEO P/ DESENGRAXE 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-16Q5:22";//SOBRECARGA ALIMENTAÇÃO BOMBA TANQUE 20 SEPARADOR DE ÓLEO P/ DESENGRAXE 02
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-20Q1:22";//SOBRECARGA  ALIMENTAÇÃO DRIVE BOMBA TANQUE 06 DECAPANTE 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-18Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA TANQUE 05 DECAPANTE 01
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-12Q2:22";//SOBRECARGA EXAUSTOR ESTUFA DE SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-17F2:12";//SOBRECARGA EXAUSTOR TANQUES 01/02 DESENGRAXE 01/02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-17F1:12";//SOBRECARGA SOFT"-START EXAUSTOR LAVADOR DE GASES
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-15Q3:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA CIRCULAÇÃO TANQUE 01 DESENGRAXE 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-16Q3:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA CIRCULAÇÃO TANQUE 02 DESENGRAXE 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-15Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA CIRCULAÇÃO REDE ÁGUA AQUECIDA BOILER ERZ900
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-22Q2:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA TANQUE 08 NEUTRALIZADOR
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-23Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA TANQUE 11 NANOCERÂMICO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-9Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA RECIRCULADO UF01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-8Q2:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA ULTRA-FILTRAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-8Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE BOMBA AGITAÇÃO/REFRIGERAÇÃO
+	    
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7F3:14";//SOBRECARGA ALIMENTAÇÃO DE POTÊNCIA PAINEL FORÇA/CONTROLE SISTEMA DE TRATAMENTO DE ÁGUA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7F2:14";//SOBRECARGA ALIMENTAÇÃO DE POTÊNCIA PAINEL FORÇA/CONTROLE ESTAÇÃO DESMINERALIZAÇÃO DE ÁGUA
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7Q2:.2";//SOBRECARGA ALIMENTAÇÃO PAINEL FORÇA/COMANDO CHILLER RESFRIAMENTO MSA-75-RI/CA (MECALOR)
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7Q1:.2";//SOBRECARGA ALIMENTAÇÃO PAINEL FORÇA/COMANDO TERMO REGULADOR TMR-M-50-380/C (MECALOR)
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-10Q2:22";//SOBRECARGA ALIMENTAÇÃO DRIVE MOTOREDUTOR ESTEIRA 02
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-10Q1:22";//SOBRECARGA ALIMENTAÇÃO DRIVE MOTOREDUTOR ESTEIRA 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7F1:14";//SOBRECARGA ALIMENTAÇÃO BARRAMENTO CARROS DE TRANSFERÊNCIA DESCARGA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=ecoat-7Q3:.2";//SOBRECARGA ALIMENTAÇÃO BARRAMENTO CARROS DE TRANSFERÊNCIA PRÉ-TRATAMENTO/KTL
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom01-7q6:22";//SOBRECARGA ALIMENTAÇÃO CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom02-7q6:22";//SOBRECARGA ALIMENTAÇÃO CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom03-7q6:22";//SOBRECARGA ALIMENTAÇÃO CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom04-7q6:22";//SOBRECARGA ALIMENTAÇÃO CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom05-7q6:22";//SOBRECARGA ALIMENTAÇÃO CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom01-7f2:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom02-7f2:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom03-7f2:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom04-7f2:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom05-7f2:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR TRANSLAÇÃO
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom01-7f1:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom02-7f1:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom03-7f1:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom04-7f1:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=eom05-7f1:22";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ELEVAÇÃO
+	    
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-15Q1:22(1)";//SOBRECARGA VENTILADOR GERADOR DE CALOR BOILER ERZ900
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-7Q1:22";//SOBRECARGA VENTILADOR GERADOR DE CALOR 01 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-7Q2:22";//SOBRECARGA VENTILADOR GERADOR DE CALOR 02 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-8Q1:22(1)";//SOBRECARGA VENTILADOR GERADOR DE CALOR 03 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-8Q2:22";//SOBRECARGA VENTILADOR GERADOR DE CALOR 04 ESTUFA DE CUR
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-7F1:12";//SOBRECARGA ALIMENTAÇÃO COMANDO GERADOR DE CALOR 01 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-7F2:12";//SOBRECARGA ALIMENTAÇÃO COMANDO GERADOR DE CALOR 02 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-8F1:12";// SOBRECARGA ALIMENTAÇÃO COMANDO GERADOR DE CALOR 03 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-8F2:12";// SOBRECARGA ALIMENTAÇÃO COMANDO GERADOR DE CALOR 04 ESTUFA DE CURA
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=pre-15F1:22";//SOBRECARGA ALIMENTAÇÃO DE COMANDO GERADOR DE CALOR BOILER ERZ900
+	    
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-9F2:12";// SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR PORTA 02 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-10F1:12";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR PORTA 03 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-10F2:12";// SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR PORTA 04 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-9F1:12";// SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR PORTA 01 ESTUFA PRÉ-SECAGEM/SECAGEM
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-11F1:12";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ESTEIRA 03 CARGA ESTUFA PRÉ-SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-11F2:12";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ESTEIRA 04 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-12F1:12";//SOBRECARGA ALIMENTAÇÃO COMANDO FREIO MOTOREDUTOR ESTEIRA 05 ESTUFA SECAGEM
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-9Q1:22(1)";//SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR PORTA 01
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-10Q1:22(1)";// SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR PORTA 03 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-10Q2:22(1)";//SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR PORTA 04 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-9Q2:22(1)";//SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR PORTA 02 ESTUFA PRÉ-SECAGEM/SECAGEM
+	    
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-11Q1:22";//SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR ESTEIRA 03 CARGA ESTUFA PRÉ-SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-11Q2:22";//SOBRECARGA ALIMENTAÇÃO POTÊNCIA DRIVE MOTOREDUTOR ESTEIRA 04 ESTUFA SECAGEM
+	    #actual^.circuitBreaker[0].i += 1;
+	    #actual^.circuitBreaker[#actual^.circuitBreaker[0].i].signal := "=oven-12Q1:22";//SOBRECARGA ALIMENTAÇÃO POTENCIA DRIVE MOTOREDUTOR ESTEIRA 05 ESTUFA SECAGEM
+	END_REGION
+	REGION powerFailure
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-5K1RL1:14";//FALHA RELAY FALTA DE FASE REDE CONCESSIONARIA
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=ecoat-5K1RL1:14(1)"; //FALHA RELE DE FALTA DE FASE
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-7G2BAT.:3";//FALHA MODULO ALIMENTACAO BATERIA EMERGENCIA UPS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-7G2ALARM:6";//FALHA BUFFER CARREGAMENTO DA BATERIA
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-7G285:8";//BATERIA COM 85% DE CARGA
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom01-xed:8";//FALHA COMANDO 24Vcc ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom02-xed:8";//FALHA COMANDO 24Vcc ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom03-xed:8";//FALHA COMANDO 24Vcc ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom04-xed:8";//FALHA COMANDO 24Vcc ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom05-xed:8";//FALHA COMANDO 24Vcc ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-24V1:XBOP:20";//CONFIRMA SINAL ALIMENTAÇÃO SAIDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom01-9a2:1";//FALHA COMANDO 24Vcc SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom02-9a2:1";//FALHA COMANDO 24Vcc SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom03-9a2:1";//FALHA COMANDO 24Vcc SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom04-9a2:1";//FALHA COMANDO 24Vcc SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom05-9a2:1";//FALHA COMANDO 24Vcc SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom05-7u1:DP1no";//FALHA COMANDO DRIVE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom01-7u1:DP1no";//FALHA COMANDO DRIVE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom03-7u1:DP1no";//FALHA COMANDO DRIVE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom02-7u1:DP1no";//FALHA COMANDO DRIVE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=eom04-7u1:DP1no";//FALHA COMANDO DRIVE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=pre-49s1";//CONFIRMA SINAL ALIMENTAÇÃO SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=ecoat-31S1:11"; //CONFIRMA SINAL ALIMENTAÇÃO ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=ecoat-10V1:XBOP:20"; //CONFIRMA SINAL ALIMENTAÇÃO SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=oven-XAL2:2"; //CONFIRMA SINAL ALIMENTAÇÃO ENTRADAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    NOT "=oven-9V1:XBOP:20";//CONFIRMA SINAL ALIMENTAÇÃO SAÍDAS DIGITAIS
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    "=pre-18Q2:12";//ALIMENTAÇÃO CONTROLADOR DE POTÊNCIA BANCO DE RESISTÊNCIAS TANQUE 05 - DECAPANTE 01
+	    
+	    #actual^.powerFailure[0].i += 1;
+	    #actual^.powerFailure[#actual^.powerFailure[0].i].signal :=
+	    "=pre-20Q2:12";//ALIMENTAÇÃO CONTROLADOR DE POTÊNCIA BANCO DE RESISTÊNCIAS TANQUE 06 - DECAPANTE 02
+	END_REGION
+	REGION eletronicCircuitBreaker
+	    #actual^.eletronicCircuitBreaker[0].i += 1;
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setSignal :=
+	    "=pre-E82_2";//SOBRECARGA DISJUNTOR ELETRÔNICO DISTRIBUIÇÃO DE COMANDO 24Vdc
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setDelayDown := 5000;
+	    "fStatus"(#actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status);
+	    #actual^.eletronicCircuitBreaker[0].i += 1;
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setSignal :=
+	    "=oven-6F2:S";// SOBRECARGA DISJUNTOR ELETRÔNICO DISTRIBUIÇÃO DE COMANDO 24Vdc
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setDelayDown := 5000;
+	    "fStatus"(#actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status);
+	    #actual^.eletronicCircuitBreaker[0].i += 1;
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setSignal :=
+	    "=ecoat-6F2:S";//SOBRECARGA DISJUNTOR ELETRÔNICO DISTRIBUIÇÃO DE COMANDO 24Vdc
+	    #actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status.setDelayDown := 5000;
+	    "fStatus"(#actual^.eletronicCircuitBreaker[#actual^.eletronicCircuitBreaker[0].i].status);
+	END_REGION
+	REGION heatingResistorFailure
+	    #actual^.heatingResistorFailure[0].i += 1;
+	    #actual^.heatingResistorFailure[#actual^.heatingResistorFailure[0].i].signal :=
+	    NOT "=pre-3SKA2:14";//FALHA RESISTÊNCIA AQUECIMENTO LADO DIREITO TANQUE 06
+	    #actual^.heatingResistorFailure[0].i += 1;
+	    #actual^.heatingResistorFailure[#actual^.heatingResistorFailure[0].i].signal :=
+	    NOT "=pre-3SKA1:14";//FALHA RESISTÊNCIA AQUECIMENTO LADO ESQUERDO TANQUE 06
+	    #actual^.heatingResistorFailure[0].i += 1;
+	    #actual^.heatingResistorFailure[#actual^.heatingResistorFailure[0].i].signal :=
+	    NOT "=pre-33KA2:14";//FALHA RESISTÊNCIA AQUECIMENTO LADO DIREITO TANQUE 05
+	    #actual^.heatingResistorFailure[0].i += 1;
+	    #actual^.heatingResistorFailure[#actual^.heatingResistorFailure[0].i].signal :=
+	    NOT "=pre-33KA1:14";//FALHA RESISTÊNCIA AQUECIMENTO LADO ESQUERDO TANQUE 05
+	END_REGION
+	REGION burnerFailure
+	    #actual^.burnerFailure[0].i += 1;
+	    #actual^.burnerFailure[#actual^.burnerFailure[0].i].signal :=
+	    "=pre-27KA2:14";//FALHA/DEFEITO QUEIMADOR GERADOR DE CALOR BOILER ERZ900
+	    #actual^.burnerFailure[0].i += 1;
+	    #actual^.burnerFailure[#actual^.burnerFailure[0].i].signal :=
+	    "=oven-15KA2:14";// FALHA QUEIMADOR GERADOR DE CALOR 02 ESTUFA DE CURA
+	    #actual^.burnerFailure[0].i += 1;
+	    #actual^.burnerFailure[#actual^.burnerFailure[0].i].signal :=
+	    "=oven-15KA1:14";//FALHA QUEIMADOR GERADOR DE CALOR 01 ESTUFA DE CURA
+	    #actual^.burnerFailure[0].i += 1;
+	    #actual^.burnerFailure[#actual^.burnerFailure[0].i].signal :=
+	    "=oven-16KA1:14";//FALHA QUEIMADOR GERADOR DE CALOR 03 ESTUFA DE CURA
+	    #actual^.burnerFailure[0].i += 1;
+	    #actual^.burnerFailure[#actual^.burnerFailure[0].i].signal :=
+	    "=oven-16KA2:14";//FALHA QUEIMADOR GERADOR DE CALOR 04 ESTUFA DE CURA.
+	END_REGION
+	REGION chillerFailure
+	    #actual^.chillerFailure[0].i += 1;
+	    #actual^.chillerFailure[#actual^.chillerFailure[0].i].signal :=
+	    "=ecoat-:14"; //FALHA DEFEITO COMANDO CHILLER RESFRIAMENTO MSA-75-RI/CA (MECALOR)
+	END_REGION
+	REGION resistorPowerController
+	    #actual^.resistorPowerController[0].i += 1;
+	    #actual^.resistorPowerController[#actual^.resistorPowerController[0].i].signal :=
+	    "=pre-18U1DO01:3";//FALHA CONTROLADOR DE POTÊNCIA RESISTÊNCIAS AQUECIMENTO TANQUE 05 - DECAPANTE 01
+	    #actual^.resistorPowerController[0].i += 1;
+	    #actual^.resistorPowerController[#actual^.resistorPowerController[0].i].signal :=
+	    "=pre-20U1DO01:3";//FALHA CONTROLADOR DE POTÊNCIA RESISTÊNCIAS AQUECIMENTO TANQUE 06 - DECAPANTE 02
+	END_REGION
+	REGION resetFailure
+	    #actual^.resetFailure[0].i += 1;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setConfig := 0;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayUp := 50;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayDown := 4000;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setSignal :=
+	    "=pre-7K1:44";//RESET FALHAS/DEFEITOS PAINEL GERAL
+	    "fStatus"(#actual^.resetFailure[#actual^.resetFailure[0].i].status);
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].signal :=
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.getStatus;
+	    
+	    #actual^.resetFailure[0].i += 1;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setConfig := 0;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayUp := 50;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayDown := 4000;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setSignal :=
+	    "=ecoat-6K1:14"; //RESET FALHAS/DEFEITOS PAINEL E-COAT
+	    "fStatus"(#actual^.resetFailure[#actual^.resetFailure[0].i].status);
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].signal :=
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.getStatus;
+	    
+	    #actual^.resetFailure[0].i += 1;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setConfig := 0;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayUp := 50;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayDown := 4000;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setSignal :=
+	    "=oven-31S1:14";// RESET FALHAS/DEFEITOS
+	    "fStatus"(#actual^.resetFailure[#actual^.resetFailure[0].i].status);
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].signal :=
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.getStatus;
+	    
+	    #actual^.resetFailure[0].i += 1;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setConfig := 0;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayUp := 50;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayDown := 4000;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setSignal :=
+	    "=pre-62S1:14";//RESET BARREIRA DE SEGURANÇA DESCARGA
+	    "fStatus"(#actual^.resetFailure[#actual^.resetFailure[0].i].status);
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].signal :=
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.getStatus;
+	    
+	    #actual^.resetFailure[0].i += 1;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setConfig := 0;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayUp := 50;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setDelayDown := 4000;
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.setSignal :=
+	    "=pre-61S4:14";//RESET BARREIRA DE SEGURANCA CARGA
+	    "fStatus"(#actual^.resetFailure[#actual^.resetFailure[0].i].status);
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].signal :=
+	    #actual^.resetFailure[#actual^.resetFailure[0].i].status.getStatus;
+	END_REGION
+	REGION airConditioningFailure
+	    #actual^.airConditioningFailure[0].i += 1;
+	    #actual^.airConditioningFailure[#actual^.airConditioningFailure[0].i].signal :=
+	    NOT "=ecoat-5E1K1:3"; // FALHA AR CONDICIONADO
+	    #actual^.airConditioningFailure[0].i += 1;
+	    #actual^.airConditioningFailure[#actual^.airConditioningFailure[0].i].signal :=
+	    NOT "=pre-6E1K1:3";//FALHA AR CONDICIONADO
+	END_REGION
+	REGION remote
+	    #actual^.remoteFastModeFR[0].i += 5;
+	    #actual^.remoteFastModeFR[#actual^.remoteFastModeFR[0].i].signal :=
+	    (#actual^.rightArrow[#actual^.remoteFastModeFR[0].i].signal OR
+	    #actual^.leftArrow[#actual^.remoteFastModeFR[0].i].signal) AND
+	    (NOT #actual^.remoteFastModeUD[#actual^.remoteFastModeFR[0].i].signal AND
+	    "=pre-76U1");//FAST FORWARD OR RETURN
+	    
+	    #actual^.remoteFastModeUD[0].i += 5;
+	    #actual^.remoteFastModeUD[#actual^.remoteFastModeUD[0].i].signal :=
+	    (#actual^.upArrow[#actual^.remoteFastModeUD[0].i].signal OR
+	    #actual^.downArrow[#actual^.remoteFastModeUD[0].i].signal) AND
+	    (NOT #actual^.remoteFastModeFR[#actual^.remoteFastModeUD[0].i].signal AND
+	    "=pre-76U1(2)");//FAST UP OR DOWN
+	    
+	    #actual^.leftArrow[0].i += 5;
+	    #actual^.leftArrow[#actual^.leftArrow[0].i].signal :=
+	    ("=pre-76U1(3)" AND //RECUA TRANSLAÇÃO
+	    NOT #actual^.remoteFastModeUD[#actual^.leftArrow[0].i].signal);
+	    
+	    #actual^.rightArrow[0].i += 5;
+	    #actual^.rightArrow[#actual^.rightArrow[0].i].signal :=
+	    ("=pre-76U1(2)" AND //AVANÇA TRANSLAÇÃO
+	    NOT #actual^.remoteFastModeUD[#actual^.rightArrow[0].i].signal);
+	    
+	    #actual^.downArrow[0].i += 5;
+	    #actual^.downArrow[#actual^.downArrow[0].i].signal :=
+	    "=pre-76U1(1)" AND //DESCE ELEVADOR
+	    NOT #actual^.remoteFastModeFR[#actual^.downArrow[0].i].signal;
+	    
+	    #actual^.upArrow[0].i += 5;
+	    #actual^.upArrow[#actual^.upArrow[0].i].signal :=
+	    "=pre-76U1" AND//SOBE ELEVADOR
+	    NOT #actual^.remoteFastModeFR[#actual^.upArrow[0].i].signal;
+	END_REGION
+	REGION stopMotion  
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=pre-61S3:14" AND "dbSafety".aux1FeedbackPre;//STOP MOVIMENTACAO CARROS TRANSFERENCIA CX. RECEITAS
+	    
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=ecoat-38S1:14" AND "dbSafety".aux1FeedbackEcoat; // STOP MOVIMENTAÇÃO CARROS DE TRANSFERÊNCIA PAINEL GERAL
+	    
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=oven-31S2:14" AND "dbSafety".aux1FeedbackOven;// STOP MOVIMENTAÇÃO
+	    
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=pre-61S1:2";//STOP MOVIMENTAÇÃO
+	    
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=ecoat-44s2";//STOP MOVIMENTAÇÃO
+	    
+	    #actual^.stopMotion[0].i += 1;
+	    #actual^.stopMotion[#actual^.stopMotion[0].i].signal :=
+	    "=pre-stopPlataforma";//STOP MOVIMENTAÇÃO
+	END_REGION
+	REGION minimumSafetyLevel tank
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-65S1:3";//NÍVEL DE SEGURANÇA TANQUE 01 DESENGRAXE 01
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-66S2:3";//NÍVEL DE SEGURANÇA TANQUE 02 DESENGRAXE 02
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-67S1:3";//NÍVEL SEGURANÇA TANQUE 03 ENXÁGUE 01
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-67S3:3";//NÍVEL SEGURANÇA TANQUE 04 ENXÁGUE 02
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-68S4:3";//NÍVEL SEGURANÇA TANQUE 05 DECAPANTE 01
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-70S1:3";//NÍVEL SEGURANÇA TANQUE 06 DECAPANTE 02
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-71S3:3";//NÍVEL SEGURANÇA TANQUE 07 ENXÁGUE 03
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-71S7:3";//NÍVEL SEGURANÇA TANQUE 08 NEUTRALIZADOR
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-72S2:3";//NÍVEL SEGURANÇA TANQUE 09 ENXÁGUE 04
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-73S1:3";//NÍVEL SEGURANÇA TANQUE 10 ENXÁGUE 05
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-73S5:3";//NÍVEL SEGURANÇA TANQUE 11 NANOCERÂMICO
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-74S1:3";//NÍVEL SEGURANÇA TANQUE 12 ENXÁGUE 06
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-74S3:3";//NÍVEL SEGURANÇA TANQUE 13 ENXÁGUE 07
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=ecoat-39S1:3";//NÍVEL MÍNIMO SEGURANÇA TANQUE 14 TINTA KTL
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=ecoat-40S5:3";//NÍVEL SEGURANÇA TANQUE 15 RECIRCULADO UF01
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=ecoat-41S2:3";//NÍVEL SEGURANÇA TANQUE 16 RECIRCULADO UF02
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=ecoat-41S6:3";//NÍVEL SEGURANÇA TANQUE 17 RECIRCULADO/DI UF03
+	    (*#actual^.MinimumSafetyLevel[0].i += 1;#actual^.minimumSafetyLevel[#actual^.MinimumSafetyLevel[0].i].signal :=
+	    "-40S4:3";//NÍVEL SEGURANÇA TANQUE 18 DE LAVAÇÃO U.F //Nao tem, segundo Carlos*)
+	    #actual^.minimumSafetyLevel[0].i += 2;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    NOT "=pre-65S5:3";//NÍVEL DE SEGURANÇA TANQUE 19 SEPARADOR DE ÓLEO P/ DESENGRAXE 01
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    NOT "=pre-66S6:3";//NÍVEL DE SEGURANÇA TANQUE 20 SEPARADOR DE ÓLEO P/ DESENGRAXE 02
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    "=pre-68S1:3";//NÍVEL DE SEGURANÇA 21 BOMBA ASPERSÃO LAVADOR DE GASES
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    NOT "=pre-68S6:3";//NÍVEL SEGURANÇA 22 CAIXA DE EXPANSÃO.
+	    #actual^.minimumSafetyLevel[0].i += 1;
+	    #actual^.minimumSafetyLevel[#actual^.minimumSafetyLevel[0].i].signal :=
+	    NOT "=ecoat-40S3:3";//NÍVEL SEGURANÇA 23 TANQUE ANOLITO
+	END_REGION
+	REGION maximumSafetyLevel tank
+	    #actual^.maximumSafetyLevel[0].i += 14;
+	    #actual^.maximumSafetyLevel[#actual^.maximumSafetyLevel[0].i].signal :=
+	    "=ecoat-39S4:3";//NÍVEL MÁXIMO SEGURANÇA TANQUE 14 TINTA KTL
+	END_REGION
+	REGION minimumLevel tank
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-64S4:3";//NÍVEL MÍNIMO TANQUE 01 DESENGRAXE 01
+	    
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-66S1:3";//NÍVEL MÍNIMO TANQUE 02 DESENGRAXE 02
+	    
+	    #actual^.minimumLevel[0].i += 3;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-68S3:3";//NÍVEL MÍNIMO TANQUE 05 DECAPANTE 01
+	    
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-69S2:3";//NÍVEL MÍNIMO TANQUE 06 DECAPANTE 02
+	    
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-71S2:3";//NÍVEL MÍNIMO TANQUE 07 ENXÁGUE 03
+	    
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-71S6:3";//NÍVEL MÍNIMO TANQUE 08 NEUTRALIZADOR
+	    
+	    #actual^.minimumLevel[0].i += 2;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-72S5:3";//NÍVEL MÍNIMO TANQUE 10 ENXÁGUE 05
+	    
+	    #actual^.minimumLevel[0].i += 1;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=pre-73S4:3";//NÍVEL MÍNIMO TANQUE 11 NANOCERÂMICO
+	    
+	    #actual^.minimumLevel[0].i += 3;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=ecoat-39S2:3";//NÍVEL MÍNIMO TRABALHO TAQNQUE 14 TINTA KTL
+	    
+	    #actual^.minimumLevel[0].i += 3;
+	    #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal := "=ecoat-41S5:3";//NÍVEL MÍNIMO TANQUE 17 RECIRCULADO/DI UF03
+	    
+	    #actual^.minimumLevel[0].i += 2; #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal :=
+	    NOT "=pre-65S4:3";//NÍVEL MÍNIMO TANQUE 19 SEPARADOR DE ÓLEO P/ DESENGRAXE 01
+	    
+	    #actual^.minimumLevel[0].i += 1; #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal :=
+	    NOT "=pre-66S5:3";//NÍVEL MÍNIMO TANQUE 20 SEPARADOR DE ÓLEO P/ DESENGRAXE 02
+	    
+	    #actual^.minimumLevel[0].i += 3; #actual^.minimumLevel[#actual^.minimumLevel[0].i].signal :=
+	    NOT "=ecoat-40S2:3";//NÍVEL MÍNIMO TANQUE 23 ANOLITO
+	END_REGION
+	REGION maximumLevel tank
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-64S3:3";//NÍVEL MÁXIMO TANQUE 01 DESENGRAXE 01 
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-65S6:3";//NÍVEL MÁXIMO TANQUE 02 DESENGRAXE 02 
+	    
+	    #actual^.maximumLevel[0].i += 3;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-68S2:3";//NÍVEL MÁXIMO TANQUE 05 DECAPANTE 01
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-69S1:3";//NÍVEL MÁXIMO TANQUE 06 DECAPANTE 02
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-71S1:3";//NÍVEL MÁXIMO TANQUE 07 ENXÁGUE 03
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-71S5:3";//NÍVEL MÁXIMO TANQUE 08 NEUTRALIZADO
+	    
+	    #actual^.maximumLevel[0].i += 2;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=pre-72S4:3";//NÍVEL MÁXIMO TANQUE 10 ENXÁGUE 05
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=pre-73S3:3";//NÍVEL MÁXIMO TANQUE 11 NANOCERÂMICO
+	
+	    #actual^.maximumLevel[0].i += 3;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=ecoat-39S3:3";//NÍVEL MÁXIMO TRABALHO TANQUE 14 TINTA KTL
+	    
+	    #actual^.maximumLevel[0].i += 3;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=ecoat-41S4:3";//NÍVEL MÁXIMO TANQUE 17 RECIRCULADO/DI UF03
+	    
+	    #actual^.maximumLevel[0].i += 2; #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-65S3:3";//NÍVEL MÁXIMO TANQUE 19 SEPARADOR DE ÓLEO P/ DESENGRAXE 01
+	    
+	    #actual^.maximumLevel[0].i += 1; #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=pre-66S4:3";//NÍVEL MÁXIMO TANQUE  20 SEPARADOR DE ÓLEO P/ DESENGRAXE 02
+	    
+	    #actual^.maximumLevel[0].i += 3; #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal :=
+	    "=ecoat-40S1:3";//NÍVEL MÁXIMO TANQUE 23 ANOLITO
+	    
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=ecoat-39S7:3";//NÍVEL MÁXIMO TANQUE 24 RESERVA KTL
+	
+	    #actual^.maximumLevel[0].i += 1;
+	    #actual^.maximumLevel[#actual^.maximumLevel[0].i].signal := "=pre-74S5:3";//NÍVEL MÁXIMO TANQUE 25 RESERVA DESENGRAXANTE /DECAPANTE
+	END_REGION
+	REGION temperature tank
+	    #actual^.temperatureTank[0].i += 1;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=pre-58S3" + #parTank^.temperatureOffset);//CONTROLE DE TEMPERATURA TANQUE 01 DESENGRAXE 01
+	    
+	    #actual^.temperatureTank[0].i += 1;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=pre-58S4" + #parTank^.temperatureOffset);//CONTROLE DE TEMPERATURA TANQUE 02 DESENGRAXE 02
+	    
+	    #actual^.temperatureTank[0].i += 3;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=pre-59S1" + #parTank^.temperatureOffset);//CONTROLE DE TEMPERATURA TANQUE 05 DECAPANTE 01
+	    
+	    #actual^.temperatureTank[0].i += 1;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=pre-59S2" + #parTank^.temperatureOffset);//CONTROLE DE TEMPERATURA TANQUE 06 DECAPANTE 02
+	    
+	    #actual^.temperatureTank[0].i += 8;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=ecoat-36S1" + #parTank^.temperatureOffset); // MEDIÇÃO DE TEMPERATURA TROCADOR DE CALOR TERMORREGULADOR
+	    
+	    #actual^.temperatureTank[0].i += 1;
+	    #parTank := REF("dbParTank".parTank[#actual^.temperatureTank[0].i]);
+	    #actual^.temperatureTank[#actual^.temperatureTank[0].i].signal :=
+	    ("=ecoat-36S2" + #parTank^.temperatureOffset); // MEDIÇÃO DE TEMPERATURA TANQUE DE LAVAÇÃO U.F.
+	END_REGION
+	REGION temperatureBoiler
+	    #actual^.temperatureInBoiler[0].i += 1;
+	    #parBoiler := REF("dbParBoiler".parBoiler[#actual^.temperatureInBoiler[0].i]);
+	    #actual^.temperatureInBoiler[#actual^.temperatureInBoiler[0].i].signal :=
+	    ("=pre-58S1" + #parBoiler^.tempInOffset);//CONTROLE DE TEMPERATURA ENTRADA DO BOILER ERZ900
+	    
+	    #actual^.temperatureOutBoiler[0].i += 1;
+	    #parBoiler := REF("dbParBoiler".parBoiler[#actual^.temperatureOutBoiler[0].i]);
+	    #actual^.temperatureOutBoiler[#actual^.temperatureOutBoiler[0].i].signal :=
+	    ("=pre-58S2" + #parBoiler^.tempOutOffset);//CONTROLE DE TEMPERATURA SAIDA DO BOILER ERZ900
+	END_REGION
+	REGION temperatureOven
+	    #actual^.temperatureOven[0].i += 1;
+	    #parOven := REF("dbParOven".parOven[#actual^.temperatureOven[0].i]);
+	    #actual^.temperatureOven[#actual^.temperatureOven[0].i].signal :=
+	    ("=oven-48S1" + #parOven^.tempOffset - 100);//CONTROLE DE TEMPERATURA INTERNA GERADOR DE CALOR 01 ESTUFA DE CURA
+	    //gean pediu offset fixo para os tres sensores de temperatura do Oven
+	    #actual^.temperatureOven[0].i += 1;
+	    #parOven := REF("dbParOven".parOven[#actual^.temperatureOven[0].i]);
+	    #actual^.temperatureOven[#actual^.temperatureOven[0].i].signal :=
+	    ("=oven-48S2" + #parOven^.tempOffset - 100);//CONTROLE DE TEMPERATURA AQUECIMENTO 01 DA ESTUFA CURA
+	    
+	    #actual^.temperatureOven[0].i += 1;
+	    #parOven := REF("dbParOven".parOven[#actual^.temperatureOven[0].i]);
+	    #actual^.temperatureOven[#actual^.temperatureOven[0].i].signal :=
+	    ("=oven-48S3" + #parOven^.tempOffset - 100);//CONTROLE DE TEMPERATURA INTERNA GERADOR DE CALOR 02 ESTUFA DE CURA
+	    
+	    #actual^.temperatureOven[0].i += 1;
+	    #parOven := REF("dbParOven".parOven[#actual^.temperatureOven[0].i]);
+	    #actual^.temperatureOven[#actual^.temperatureOven[0].i].signal :=
+	    ("=oven-48S4" + #parOven^.tempOffset - 100);//CONTROLE DE TEMPERATURA AQUECIMENTO 02 DA ESTUFA CURA
+	END_REGION
+	REGION skidDetectedTank
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal :=
+	    "=pre-65S2:3";//PRESENÇA DE SKID TANQUE 01 DESENGRAXE 01
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal :=
+	    "=pre-66S3:3";//PRESENÇA DE SKID TANQUE 02 DESENGRAXE 02
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal :=
+	    "=pre-67S2:3";//PRESENÇA DE SKID TANQUE 03 ENXÁGUE 01
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal :=
+	    "=pre-67S4:3";//PRESENÇA DE SKID TANQUE 04 ENXÁGUE 02
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal :=
+	    "=pre-68S5:3";//PRESENÇA DE SKID TANQUE 05 DECAPANTE 0
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-70S2:3";//PRESENÇA DE SKID TANQUE 06 DECAPANTE 02
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-71S4:3";//PRESENÇA DE SKID TANQUE 07 ENXÁGUE 03
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-72S1:3";//PRESENÇA DE SKIDTANQUE 08 NEUTRALIZADOR
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-72S3:3";//PRESENÇA DE SKID TANQUE 09 ENXÁGUE 04
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-71S2:3(1)";//PRESENÇA DE SKID TANQUE 10 ENXÁGUE 05
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-73S6:3";//PRESENÇA DE SKID TANQUE 11 NANOCERÂMICO
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-74S2:3";//PRESENÇA DE SKID TANQUE 12 ENXÁGUE 06
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=pre-74S4:3";//PRESENÇA DE SKID TANQUE 13 ENXÁGUE 07
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=ecoat-39S6:3";//SENSOR PRESENÇA SKID TANQUE 14 TINTA KTL
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=ecoat-41S1:3";//SENSOR PRESENÇA SKID TANQUE 15 RECIRCULADO UF01
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=ecoat-41S3:3";//SENSOR PRESENÇA SKID TANQUE 16 RECIRCULADO UF02
+	    
+	    #actual^.skidDetectedATank[0].i += 1;
+	    #actual^.skidDetectedATank[#actual^.skidDetectedATank[0].i].signal := "=ecoat-42S1:3";//SENSOR PRESENÇA SKID TANQUE 17 RECIRCULADO UF03
+	END_REGION
+	REGION thermostatIndication boiler
+	    #actual^.thermostatIndication[0].i += 1;
+	    #actual^.thermostatIndication[#actual^.thermostatIndication[0].i].signal :=
+	    "=pre-27KA1:14";//TERMOSTATO DE SEGURANÇA AQUECIMENTO BOILER ERZ900
+	END_REGION
+	REGION skidDetectedConveyor
+	    //conveyor1
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    "=ecoat-42S4:3"; //POSIÇÃO INICIAL 01 SKID SOBRE ESTEIRA 01
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedBConveyor[0].i += 1;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal :=
+	    "=ecoat-42S5:3"; //POSIÇÃO INICIAL 02 SKID SOBRE ESTEIRA 01
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status);
+	    
+	    //conveyor2
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    "=ecoat-42S6:3"; //POSIÇÃO FINAL 01 DO SKID NA ESTEIRA 01
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 500;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedBConveyor[0].i += 1;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal :=
+	    "=ecoat-43S1:3"; //POSIÇÃO FINAL 02 DO SKID NA ESTEIRA 01
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayDown := 500;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status);
+	    
+	    //conveyor3
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    "=ecoat-43S2:3"; //SKID NA POSIÇÃO 01 ESTEIRA 02
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedBConveyor[0].i += 1;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal :=
+	    "=ecoat-43S3:3"; //SKID NA POSIÇÃO 02 ESTEIRA 02
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayDown := 22000; //3000
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status);
+	    
+	    
+	    #actual^.skidDetectedCConveyor[0].i += 3;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].signal :=
+	    "=ecoat-43S4:3"; //SKID NA POSIÇÃO 01 ESTEIRA 03
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setDelayDown := 22000; //3000
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedDConveyor[0].i += 3;
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].signal :=
+	    NOT "=oven-21B2:3";//PRESENÇA DE SKID PORTA 01 ENTRADA ESTUFA DE PRÉ SECAGEM//antes da porta 1 lado esquerdo
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedDConveyor[#actual^.skidDetectedDConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedEConveyor[0].i += 3;
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].signal :=
+	    NOT "=oven-21B4:3";//PRESENÇA DE SKID DENTRO DA ESTUFA DE PRÉ SECAGEM//depois da porta 1 lado esquerdo
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedEConveyor[#actual^.skidDetectedEConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedFConveyor[0].i += 3;
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].signal :=
+	    NOT "=oven-22B2:3";//PRESENÇA DE SKID ENTRADA ESTEIRA 03 ESTUFA SECAGEM//antes da porta 2 lado esquerdo
+	    IF NOT #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].signal THEN
+	        #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].pulse.setSignal := TRUE;
+	    ELSE
+	        #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].pulse.setSignal := FALSE;
+	    END_IF;
+	    "fPulseOnRise"(#actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].pulse);
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedFConveyor[#actual^.skidDetectedFConveyor[0].i].status);
+	    
+	    //conveyor4
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    NOT "=oven-22B4:3";//PRESENÇA DE SKID SAÍDA ESTEIRA 03 ESTUFA SECAGEM
+	    IF #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal THEN
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := TRUE;
+	    ELSE
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := FALSE;
+	    END_IF;
+	    "fPulseOnRise"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse);
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    //conveyor5
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    NOT "=oven-23B2:3";//PRESENÇA DE SKID NA ESTEIRA 05 SAÍDA ESTUFA SECAGEM
+	    IF #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal THEN
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := TRUE;
+	    ELSE
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := FALSE;
+	    END_IF;
+	    "fPulseOnRise"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse);
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    //entrada do conveyor6
+	    #actual^.skidDetectedAConveyor[0].i += 1;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal :=
+	    NOT "=oven-23B4:3";//PRESENÇA DE SKID NA ESTEIRA 05 SAÍDA ESTUFA SECAGEM
+	    IF NOT #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal THEN
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := TRUE;
+	    ELSE
+	        #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse.setSignal := FALSE;
+	    END_IF;
+	    "fPulseOnRise"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].pulse);
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedAConveyor[#actual^.skidDetectedAConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedBConveyor[0].i += 3;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal :=
+	    "=pre-75S1:3";//PRESENÇA DE SKID FINAL DA ESTEIRA 06 LADO ESQUERDO
+	    IF #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal THEN
+	        #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].pulse.setSignal := TRUE;
+	    ELSE
+	        #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].pulse.setSignal := FALSE;
+	    END_IF;
+	    "fPulseOnRise"(#actual^.skidDetectedBConveyor[#actual^.skidDetectedAConveyor[0].i].pulse);
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedBConveyor[#actual^.skidDetectedBConveyor[0].i].status);
+	    
+	    #actual^.skidDetectedCConveyor[0].i += 3;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].signal :=
+	    "=pre-75S2:3";//PRESENÇA DE SKID FINAL DA ESTEIRA 06 LADO DIREITO
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setDelayUp := 0;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setDelayDown := 3000;
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status.setSignal :=
+	    #actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].signal;
+	    "fStatus"(#actual^.skidDetectedCConveyor[#actual^.skidDetectedCConveyor[0].i].status);
+	END_REGION
+	REGION advancedConveyor
+	    #actual^.advancedConveyor[0].i += 2;
+	    #actual^.advancedConveyor[#actual^.advancedConveyor[0].i].signal :=
+	    "=ecoat-42S3:3"; //MESA ELEVADORA EM CIMA
+	END_REGION
+	REGION returnedConveyor
+	    #actual^.returnedConveyor[0].i += 2;
+	    #actual^.returnedConveyor[#actual^.returnedConveyor[0].i].signal :=
+	    "=ecoat-42S2:3"; //MESA ELEVADORA EM BAIXO
+	END_REGION
+	REGION advancedDoor
+	    #actual^.advancedADoor[0].i += 1;
+	    #actual^.advancedADoor[#actual^.advancedADoor[0].i].signal :=
+	    "=oven-33S3:3";//PORTA 01 ESTUFA PRÉ-SECAGEM POSIÇÃO DIREITO FECHADO
+	    #actual^.advancedBDoor[0].i += 1;
+	    #actual^.advancedBDoor[#actual^.advancedBDoor[0].i].signal :=
+	    "=oven-33S4:3";//PORTA 01 ESTUFA PRÉ-SECAGEM POSIÇÃO ESQUERDO FECHADO
+	    
+	    #actual^.advancedADoor[0].i += 1;
+	    #actual^.advancedADoor[#actual^.advancedADoor[0].i].signal :=
+	    "=oven-34S3:3";//PORTA 02 ESTUFA PRÉ-SECAGEM/SECAGEM POSIÇÃO DIREITO FECHADO
+	    #actual^.advancedBDoor[0].i += 1;
+	    #actual^.advancedBDoor[#actual^.advancedBDoor[0].i].signal :=
+	    "=oven-34S4:3";//PORTA 02 ESTUFA PRÉ-SECAGEM/SECAGEM POSIÇÃO ESQUERDO FECHADO
+	    
+	    #actual^.advancedADoor[0].i += 1;
+	    #actual^.advancedADoor[#actual^.advancedADoor[0].i].signal :=
+	    "=oven-35S2:3";//PORTA 03 ESTUFA SECAGEM POSIÇÃO DIREITO FECHADO
+	    #actual^.advancedBDoor[0].i += 1;
+	    #actual^.advancedBDoor[#actual^.advancedBDoor[0].i].signal :=
+	    "=oven-35S3:3";//PORTA 03 ESTUFA SECAGEM POSIÇÃO ESQUERDO FECHADO
+	    
+	    #actual^.advancedADoor[0].i += 1;
+	    #actual^.advancedADoor[#actual^.advancedADoor[0].i].signal :=
+	    "=oven-35S6:3";//PORTA 04 ESTUFA SECAGEM POSIÇÃO DIREITO FECHADO
+	    #actual^.advancedBDoor[0].i += 1;
+	    #actual^.advancedBDoor[#actual^.advancedBDoor[0].i].signal :=
+	    "=oven-36S1:3";//PORTA 04 ESTUFA SECAGEM POSIÇÃO ESQUERDO FECHADO
+	END_REGION
+	REGION returnedBDoor
+	    #actual^.returnedADoor[0].i += 1;
+	    #actual^.returnedADoor[#actual^.returnedADoor[0].i].signal :=
+	    "=oven-33S2:3";//PORTA 01 ESTUFA PRÉ-SECAGEM POSIÇÃO DIREITO ABERTO
+	    #actual^.returnedBDoor[0].i += 1;
+	    #actual^.returnedBDoor[#actual^.returnedBDoor[0].i].signal :=
+	    "=oven-33S1:3";//PORTA 01 ESTUFA PRÉ-SECAGEM POSIÇÃO ESQUERDO ABERTO
+	    
+	    #actual^.returnedADoor[0].i += 1;
+	    #actual^.returnedADoor[#actual^.returnedADoor[0].i].signal :=
+	    "=oven-34S2:3";//PORTA 02 ESTUFA PRÉ-SECAGEM/SECAGEM POSIÇÃO DIREITO ABERTO
+	    #actual^.returnedBDoor[0].i += 1;
+	    #actual^.returnedBDoor[#actual^.returnedBDoor[0].i].signal :=
+	    "=oven-34S1:3";//PORTA 02 ESTUFA PRÉ-SECAGEM/SECAGEM POSIÇÃO ESQUERDO ABERTO
+	    
+	    #actual^.returnedADoor[0].i += 1;
+	    #actual^.returnedADoor[#actual^.returnedADoor[0].i].signal :=
+	    "=oven-35S1:3";//PORTA 03 ESTUFA SECAGEM POSIÇÃO DIREITO ABERTO
+	    #actual^.returnedBDoor[0].i += 1;
+	    #actual^.returnedBDoor[#actual^.returnedBDoor[0].i].signal :=
+	    "=oven-34S5:3";//PORTA 03 ESTUFA SECAGEM POSIÇÃO ESQUERDO ABERTO
+	    
+	    #actual^.returnedADoor[0].i += 1;
+	    #actual^.returnedADoor[#actual^.returnedADoor[0].i].signal :=
+	    "=oven-35S5:3";//PORTA 04 ESTUFA SECAGEM POSIÇÃO DIREITO ABERTO
+	    #actual^.returnedBDoor[0].i += 1;
+	    #actual^.returnedBDoor[#actual^.returnedBDoor[0].i].signal :=
+	    "=oven-35S4:3";//PORTA 04 ESTUFA SECAGEM POSIÇÃO ESQUERDO ABERTO
+	END_REGION
+	REGION skidDetectedShipping
+	    #actual^.skidDetectedAShipping[0].i += 1;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setDelayUp := 5000;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setDelayDown := 5000;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setSignal :=
+	    //"-63S1:3";//SENSOR PRESENÇA SKID NA ÁREA DA CARGA
+	    "=pre-esqCarga" OR "=pre-dirCarga";
+	    "fStatus"(#actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status);
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].signal :=
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.getStatus;
+	    
+	    #actual^.skidDetectedBShipping[0].i += 1;
+	    #actual^.skidDetectedBShipping[#actual^.skidDetectedBShipping[0].i].signal :=
+	    "=pre-63S3:3";//SENSOR ALINHAMENTO SKID ÁREA DE CARGA LADO DIREITO
+	    
+	    #actual^.skidDetectedCShipping[0].i += 1;
+	    #actual^.skidDetectedCShipping[#actual^.skidDetectedCShipping[0].i].signal :=
+	    "=pre-63S2:3";//SENSOR ALINHAMENTO SKID ÁREA DE CARGA LADO ESQUERDO
+	    
+	    #actual^.skidDetectedAShipping[0].i += 1;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setConfig := 0;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setDelayUp := 5000;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setDelayDown := 5000;
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.setSignal :=
+	    //"-75S3:3";//SENSOR PRESENÇA SKID NA ÁREA DE DESCARGA
+	    "=pre-dirDescarga" OR "=pre-esqDescarga";
+	    "fStatus"(#actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status);
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].signal :=
+	    #actual^.skidDetectedAShipping[#actual^.skidDetectedAShipping[0].i].status.getStatus;
+	    
+	    #actual^.skidDetectedBShipping[0].i += 1;
+	    #actual^.skidDetectedBShipping[#actual^.skidDetectedBShipping[0].i].signal :=
+	    "=pre-75S5:3";//SENSOR ALINHAMENTO SKID ÁREA DE DESCARGA LADO DIREITO
+	    
+	    #actual^.skidDetectedCShipping[0].i += 1;
+	    #actual^.skidDetectedCShipping[#actual^.skidDetectedCShipping[0].i].signal :=
+	    "=pre-75S4:3";//SENSOR ALINHAMENTO SKID ÁREA DE DESCARGA LADO ESQUERDO
+	    
+	    //"dbArchiveSlotShipping".slotShipping[1].slot[1].loaded
+	END_REGION
+	REGION pressureTransmitter
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-52S2";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 01 DESENGRAXE 01
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-52S4";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 02 DESENGRAXE 02
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 3;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-53S2";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 05 DECAPANTE 01
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-53S4";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 06 DACAPANTE 02
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 2;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-54S2";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 08 NEUTRALIZADOTR
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 3;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 10;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=pre-54S4";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 11 NANOCERAMICO
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 4;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-32S4";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 15 RECIRCULADO UF01
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-33S2";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 16 RECIRCULADO UF02 ******* O CORRETO SERIA 33S2
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;//bar
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-33S4";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG TANQUE 17 RECIRCULADO UF03
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-29?S0.3";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG FILTRAÇÃO TERMOCHILLER
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-29?S2.1";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG ULTRA FILTRAÇÃO/REFRIGERAÇÃO/AGITAÇÃO
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	    
+	    #actual^.pressureTransmitter[0].i += 1;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setInputMax := 27600;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMin := 0;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setScaleMax := 100;
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.setSignal :=
+	    "=ecoat-29?S5.3";//TRANSMISSOR DE PRESSÃO SATURAÇÃO FILTRO BAG ULTRA FILTRAÇÃO/REFRIGERAÇÃO/AGITAÇÃO
+	    "fScale"(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale);
+	    #actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].signal :=
+	    REAL_TO_INT(#actual^.pressureTransmitter[#actual^.pressureTransmitter[0].i].scale.getResult);
+	END_REGION
+	REGION vibrationSensor    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-52S1";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 01 DESENGRAXE 01
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-52S3";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 02 DESENGRAXE 02
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 3;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-53S1";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 05 DECAPANTE 01
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-53S3";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 06 DECAPANTE 02
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 2;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-54S1";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 08 NEUTRALIZADOR
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 3;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-54S3";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO TANQUE 11 NANOCERAMICO
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 3;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=ecoat-32S1";//SENSOR DE VIBRAÇÃO BOMBA AGITAÇÃO/REFRIGERAÇÃO
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=ecoat-32S3";//SENSOR DE VIBRAÇÃO RECIRCULADO 15 UF01
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=ecoat-33S1";//SENSOR DE VIBRAÇÃO RECIRCULADO 16 UF02
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i += 1;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=ecoat-33S3";//SENSOR DE VIBRAÇÃO RECIRCULADO 17 UF03
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i := 24;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=ecoat-32S2";//SENSOR DE VIBRAÇÃO BOMBA ULTRA-FILTRAÇÃO
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	    
+	    #actual^.vibrationSensor[0].i := 25;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setInputMax := 27600;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMin := 0;
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setScaleMax := 250;//0 a 25mm
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.setSignal :=
+	    "=pre-55S1";//SENSOR DE VIBRAÇÃO BOMBA CIRCULAÇÃO REDE AGUA AQUECIDA BOILER ERZ900
+	    "fScale"(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale);
+	    #actual^.vibrationSensor[#actual^.vibrationSensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.vibrationSensor[#actual^.vibrationSensor[0].i].scale.getResult);
+	END_REGION
+	REGION conductivitySensor
+	    #actual^.conductivitySensor[0].i := 1;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMax := 27600;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMax := 100;//ph
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setSignal :=
+	    "=pre-56W1";//MEDIÇÃO DE CONDUTIVIDADE TANQUE AGUA D.I.
+	    "fScale"(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale);
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.getResult);
+	    
+	    #actual^.conductivitySensor[0].i := 7;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMax := 27000;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMax := 1000;//mS
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setSignal :=
+	    "=pre-55F3";//MEDIÇÃO DE CONDUTIVIDADE TANQUE 07 ENXAGUE
+	    "fScale"(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale);
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.getResult);
+	    
+	    #actual^.conductivitySensor[0].i := 23;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setInputMax := 26900;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMin := 0;
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setScaleMax := 10000; //mS
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.setSignal :=
+	    "=ecoat-34F1";//MEDIÇÃO DE CONDUTIVIDADE TANQUE 23 ANOLITO
+	    "fScale"(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale);
+	    #actual^.conductivitySensor[#actual^.conductivitySensor[0].i].signal :=
+	    REAL_TO_INT(#actual^.conductivitySensor[#actual^.conductivitySensor[0].i].scale.getResult);
+	END_REGION
+	REGION phMeter
+	    #actual^.phMeter[0].i := 11;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setInputMin := 0;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setInputMax := 27600;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setScaleMin := 0;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setScaleMax := 140;//ph
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setSignal :=
+	    "=pre-55F2";//MEDIÇÃO DE PH TANQUE 11 NANOCERAMICO
+	    "fScale"(#actual^.phMeter[#actual^.phMeter[0].i].scale);
+	    #actual^.phMeter[#actual^.phMeter[0].i].signal :=
+	    REAL_TO_INT(#actual^.phMeter[#actual^.phMeter[0].i].scale.getResult);
+	    
+	    #actual^.phMeter[0].i := 13;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setInputMin := 0;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setInputMax := 27600;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setScaleMin := 0;
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setScaleMax := 140;//ph
+	    #actual^.phMeter[#actual^.phMeter[0].i].scale.setSignal :=
+	    "=pre-55F1";//MEDIÇÃO DE PH TANQUE 08 NEUTRALIZADOR
+	    "fScale"(#actual^.phMeter[#actual^.phMeter[0].i].scale);
+	    #actual^.phMeter[#actual^.phMeter[0].i].signal :=
+	    REAL_TO_INT(#actual^.phMeter[#actual^.phMeter[0].i].scale.getResult);
+	END_REGION
+	REGION flowIndicator
+	    #actual^.flowIndicator[0].i += 1;
+	    #actual^.flowIndicator[#actual^.flowIndicator[0].i].signal :=
+	    "=ecoat-39S5:3"; //FLUXOSTATO SEGURANÇA BOMBA TRANSFERÊNCIA
+	END_REGION
+	REGION electricCurrent tank
+	    #actual^.electricCurrent[0].i += 1;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setSignal :=
+	    "=ecoat-35W1";//MEDIÇÃO DE CORRENTE RETIFICADOR TANQUE 14 TINTA KTL
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setInputMin := 0;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setInputMax := 28000;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setScaleMin := 0;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setScaleMax := 600;
+	    "fScale"(#actual^.electricCurrent[#actual^.electricCurrent[0].i].scale);
+	    
+	    #actual^.electricCurrent[0].i += 1;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setSignal :=
+	    "=ecoat-ecoatTensaoRetificador";//
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setInputMin := 0;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setInputMax := 28000;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setScaleMin := 0;
+	    #actual^.electricCurrent[#actual^.electricCurrent[0].i].scale.setScaleMax := 512;
+	    "fScale"(#actual^.electricCurrent[#actual^.electricCurrent[0].i].scale);
+	
+	END_REGION
+	REGION consumptionMeter
+	    #actual^.consumptionMeter[0].i += 1;
+	    #actual^.consumptionMeter[#actual^.consumptionMeter[0].i].signal :=
+	    "=pre-64S2:HF";//SINAL DE PULSO "A";MEDIDOR CONSUMO DE GÁS
+	    #actual^.consumptionMeter[0].i += 1;
+	    #actual^.consumptionMeter[#actual^.consumptionMeter[0].i].signal :=
+	    "=pre-64S2:LF";//SINAL DE PULSO "B";MEDIDOR CONSUMO DE GÁS
+	    #actual^.consumptionMeter[0].i += 1;
+	    #actual^.consumptionMeter[#actual^.consumptionMeter[0].i].signal :=
+	    "=pre-64S1:HF";//SINAL DE PULSO "A";MEDIDOR CONSUMO DE ÁGUA INDUSTRIAL
+	    #actual^.consumptionMeter[0].i += 1;
+	    #actual^.consumptionMeter[#actual^.consumptionMeter[0].i].signal :=
+	    "=pre-64S1:LF";//SINAL DE PULSO "B";MEDIDOR CONSUMO DE ÁGUA INDUSTRIAL
+	END_REGION
+	REGION eom regular inputs
+	    #actual^.confirmSetupTranslation[0].i += 1;
+	    #actual^.confirmSetupTranslation[#actual^.confirmSetupTranslation[0].i].signal :=
+	    "=eom01-7u1:Y2:Y13:3";//CONFIRMA SETUP MOVIMENTAÇÃO TRANSLAÇÃO  confirmSetupTranslation
+	    #actual^.confirmSetupTranslation[0].i += 1;
+	    #actual^.confirmSetupTranslation[#actual^.confirmSetupTranslation[0].i].signal :=
+	    "=eom02-7u1:Y2:Y13:3";//CONFIRMA SETUP MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.confirmSetupTranslation[0].i += 1;
+	    #actual^.confirmSetupTranslation[#actual^.confirmSetupTranslation[0].i].signal :=
+	    "=eom03-7u1:Y2:Y13:3";//CONFIRMA SETUP MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.confirmSetupTranslation[0].i += 1;
+	    #actual^.confirmSetupTranslation[#actual^.confirmSetupTranslation[0].i].signal :=
+	    "=eom04-7u1:Y2:Y13:3";//CONFIRMA SETUP MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.confirmSetupTranslation[0].i += 1;
+	    #actual^.confirmSetupTranslation[#actual^.confirmSetupTranslation[0].i].signal :=
+	    "=eom05-7u1:Y2:Y13:3";//CONFIRMA SETUP MOVIMENTAÇÃO TRANSLAÇÃO
+	    
+	    #actual^.confirmTriggerGearmotorLift[0].i += 1;
+	    #actual^.confirmTriggerGearmotorLift[#actual^.confirmTriggerGearmotorLift[0].i].signal :=
+	    "=eom01-11k1:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR ELEVAÇÃO  confirmTriggerGearmotorLift
+	    #actual^.confirmTriggerGearmotorLift[0].i += 1;
+	    #actual^.confirmTriggerGearmotorLift[#actual^.confirmTriggerGearmotorLift[0].i].signal :=
+	    "=eom02-11k1:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.confirmTriggerGearmotorLift[0].i += 1;
+	    #actual^.confirmTriggerGearmotorLift[#actual^.confirmTriggerGearmotorLift[0].i].signal :=
+	    "=eom03-11k1:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.confirmTriggerGearmotorLift[0].i += 1;
+	    #actual^.confirmTriggerGearmotorLift[#actual^.confirmTriggerGearmotorLift[0].i].signal :=
+	    "=eom04-11k1:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR ELEVAÇÃO
+	    #actual^.confirmTriggerGearmotorLift[0].i += 1;
+	    #actual^.confirmTriggerGearmotorLift[#actual^.confirmTriggerGearmotorLift[0].i].signal :=
+	    "=eom05-11k1:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR ELEVAÇÃO
+	    
+	    
+	    #actual^.confirmTriggerGearmotorTranslation[0].i += 1;
+	    #actual^.confirmTriggerGearmotorTranslation[#actual^.confirmTriggerGearmotorTranslation[0].i].signal :=
+	    "=eom01-11k2:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR TRANSLAÇÃO    confirmTriggerGearmotorTranslation
+	    #actual^.confirmTriggerGearmotorTranslation[0].i += 1;
+	    #actual^.confirmTriggerGearmotorTranslation[#actual^.confirmTriggerGearmotorTranslation[0].i].signal :=
+	    "=eom02-11k2:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.confirmTriggerGearmotorTranslation[0].i += 1;
+	    #actual^.confirmTriggerGearmotorTranslation[#actual^.confirmTriggerGearmotorTranslation[0].i].signal :=
+	    "=eom03-11k2:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.confirmTriggerGearmotorTranslation[0].i += 1;
+	    #actual^.confirmTriggerGearmotorTranslation[#actual^.confirmTriggerGearmotorTranslation[0].i].signal :=
+	    "=eom04-11k2:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR TRANSLAÇÃO
+	    #actual^.confirmTriggerGearmotorTranslation[0].i += 1;
+	    #actual^.confirmTriggerGearmotorTranslation[#actual^.confirmTriggerGearmotorTranslation[0].i].signal :=
+	    "=eom05-11k2:14";//CONFIRMA ACIONAMENTO MOTOREDUTOR TRANSLAÇÃO
+	    
+	    #actual^.minimumSafetyTranslation[0].i += 1;
+	    #actual^.minimumSafetyTranslation[#actual^.minimumSafetyTranslation[0].i].signal :=
+	    "=eom01-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO    minimumSafetyTranslation
+	    #actual^.minimumSafetyTranslation[0].i += 1;
+	    #actual^.minimumSafetyTranslation[#actual^.minimumSafetyTranslation[0].i].signal :=
+	    "=eom02-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.minimumSafetyTranslation[0].i += 1;
+	    #actual^.minimumSafetyTranslation[#actual^.minimumSafetyTranslation[0].i].signal :=
+	    "=eom03-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.minimumSafetyTranslation[0].i += 1;
+	    #actual^.minimumSafetyTranslation[#actual^.minimumSafetyTranslation[0].i].signal :=
+	    "=eom04-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.minimumSafetyTranslation[0].i += 1;
+	    #actual^.minimumSafetyTranslation[#actual^.minimumSafetyTranslation[0].i].signal :=
+	    "=eom05-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    
+	    
+	    #actual^.safetyCrashCar[0].i += 1;
+	    #actual^.safetyCrashCar[#actual^.safetyCrashCar[0].i].signal :=
+	    "=eom01-12b7:4";//SEGURANCA COLISAO ENTRE CARROS DE TRANSFERENCIA   SafetyCrashCar
+	    #actual^.safetyCrashCar[0].i += 1;
+	    #actual^.safetyCrashCar[#actual^.safetyCrashCar[0].i].signal :=
+	    "=eom02-12b7:4";//SEGURANCA COLISAO ENTRE CARROS DE TRANSFERENCIA
+	    #actual^.safetyCrashCar[0].i += 1;
+	    #actual^.safetyCrashCar[#actual^.safetyCrashCar[0].i].signal :=
+	    "=eom03-12b7:4";//SEGURANCA COLISAO ENTRE CARROS DE TRANSFERENCIA
+	    #actual^.safetyCrashCar[0].i += 1;
+	    #actual^.safetyCrashCar[#actual^.safetyCrashCar[0].i].signal :=
+	    "=eom04-12b7:4"; //SEGURANCA COLISAO ENTRE CARROS DE TRANSFERENCIA
+	    #actual^.safetyCrashCar[0].i += 1;
+	    #actual^.safetyCrashCar[#actual^.safetyCrashCar[0].i].signal :=
+	    "=eom05-12b7:4";//SEGURANCA COLISAO ENTRE CARROS DE TRANSFERENCIA
+	    
+	    #actual^.maximumSafetyTranslation[0].i += 1;
+	    #actual^.maximumSafetyTranslation[#actual^.maximumSafetyTranslation[0].i].signal :=
+	    "=eom01-13b4:4";//LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO  maximumSafetyTranslation
+	    #actual^.maximumSafetyTranslation[0].i += 1;
+	    #actual^.maximumSafetyTranslation[#actual^.maximumSafetyTranslation[0].i].signal :=
+	    "=eom02-13b4:4";//LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.maximumSafetyTranslation[0].i += 1;
+	    #actual^.maximumSafetyTranslation[#actual^.maximumSafetyTranslation[0].i].signal :=
+	    "=eom03-13b4:4";//LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.maximumSafetyTranslation[0].i += 1;
+	    #actual^.maximumSafetyTranslation[#actual^.maximumSafetyTranslation[0].i].signal :=
+	    "=eom04-13b4:4";//LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    #actual^.maximumSafetyTranslation[0].i += 1;
+	    #actual^.maximumSafetyTranslation[#actual^.maximumSafetyTranslation[0].i].signal :=
+	    "=eom05-13b4:4";//LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    
+	    #actual^.slowdownGoTranslation[0].i += 1;
+	    #actual^.slowdownGoTranslation[#actual^.slowdownGoTranslation[0].i].signal :=
+	    "=eom01-xed:8(1)";//DESACELERA MOVIMENTAÇÃO AVANÇO TRANSLAÇÃO     slowdownGoTranslation
+	    #actual^.slowdownGoTranslation[0].i += 1;
+	    #actual^.slowdownGoTranslation[#actual^.slowdownGoTranslation[0].i].signal :=
+	    "=eom02-xed:8(1)";//DESACELERA MOVIMENTAÇÃO AVANÇO TRANSLAÇÃO
+	    #actual^.slowdownGoTranslation[0].i += 1;
+	    #actual^.slowdownGoTranslation[#actual^.slowdownGoTranslation[0].i].signal :=
+	    "=eom03-xed:8(1)";//DESACELERA MOVIMENTAÇÃO AVANÇO TRANSLAÇÃO
+	    #actual^.slowdownGoTranslation[0].i += 1;
+	    #actual^.slowdownGoTranslation[#actual^.slowdownGoTranslation[0].i].signal :=
+	    "=eom04-xed:8(1)";//DESACELERA MOVIMENTAÇÃO AVANÇO TRANSLAÇÃO
+	    #actual^.slowdownGoTranslation[0].i += 1;
+	    #actual^.slowdownGoTranslation[#actual^.slowdownGoTranslation[0].i].signal :=
+	    "=eom05-xed:8(1)";//DESACELERA MOVIMENTAÇÃO AVANÇO TRANSLAÇÃO
+	    
+	    
+	    #actual^.slowdownBackTranslation[0].i += 1;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status.setConfig := 0;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status.setDelayUp := 0;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status.setDelayDown := 50;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status.setSignal :=
+	    "=eom01-xed:10";//DESACELERA MOVIMENTAÇÃO RECUO TRANSLAÇÃO    slowdownBackTranslation
+	    "fStatus"(#actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status);
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].signal :=
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].status.getStatus;
+	    #actual^.slowdownBackTranslation[0].i += 1;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].signal :=
+	    "=eom02-xed:10";//DESACELERA MOVIMENTAÇÃO RECUO TRANSLAÇÃO
+	    #actual^.slowdownBackTranslation[0].i += 1;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].signal :=
+	    "=eom03-xed:10";//DESACELERA MOVIMENTAÇÃO RECUO TRANSLAÇÃO
+	    #actual^.slowdownBackTranslation[0].i += 1;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].signal :=
+	    "=eom04-xed:10";//DESACELERA MOVIMENTAÇÃO RECUO TRANSLAÇÃO
+	    #actual^.slowdownBackTranslation[0].i += 1;
+	    #actual^.slowdownBackTranslation[#actual^.slowdownBackTranslation[0].i].signal :=
+	    "=eom05-xed:10";//DESACELERA MOVIMENTAÇÃO RECUO TRANSLAÇÃO
+	    
+	    #actual^.positionStopTranslationTank[0].i += 1;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setConfig := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayUp := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayDown := 250;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setSignal :=
+	    "=eom01-xed:9";//POSIÇÃO DE PARADA MOVIMENTAÇÃO TRANSLAÇÃO SOBRE O TANQUE   positionStopTranslationTank
+	    "fStatus"(#actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status);
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].signal :=
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.getStatus;
+	    
+	    #actual^.positionStopTranslationTank[0].i += 1;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setConfig := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayUp := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayDown := 250;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setSignal :=
+	    "=eom02-xed:9";//POSIÇÃO DE PARADA MOVIMENTAÇÃO TRANSLAÇÃO SOBRE O TANQUE   positionStopTranslationTank
+	    "fStatus"(#actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status);
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].signal :=
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.getStatus;
+	    
+	    #actual^.positionStopTranslationTank[0].i += 1;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setConfig := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayUp := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayDown := 250;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setSignal :=
+	    "=eom03-xed:9";//POSIÇÃO DE PARADA MOVIMENTAÇÃO TRANSLAÇÃO SOBRE O TANQUE   positionStopTranslationTank
+	    "fStatus"(#actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status);
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].signal :=
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.getStatus;
+	    
+	    #actual^.positionStopTranslationTank[0].i += 1;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setConfig := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayUp := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayDown := 250;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setSignal :=
+	    "=eom04-xed:9";//POSIÇÃO DE PARADA MOVIMENTAÇÃO TRANSLAÇÃO SOBRE O TANQUE   positionStopTranslationTank
+	    "fStatus"(#actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status);
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].signal :=
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.getStatus;
+	    
+	    #actual^.positionStopTranslationTank[0].i += 1;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setConfig := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayUp := 0;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setDelayDown := 250;
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.setSignal :=
+	    //"=eom05-XED:9";//POSIÇÃO DE PARADA MOVIMENTAÇÃO TRANSLAÇÃO SOBRE O TANQUE   positionStopTranslationTank
+	    "=eom05-13b4:4" OR //LIMITE DE SEGURANÇA MÁXIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    "=eom05-12b6:4";//LIMITE DE SEGURANÇA MÍNIMO MOVIMENTAÇÃO TRANSLAÇÃO
+	    "fStatus"(#actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status);
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].signal :=
+	    #actual^.positionStopTranslationTank[#actual^.positionStopTranslationTank[0].i].status.getStatus;
+	    
+	    #actual^.limitMaximumClimbLift[0].i += 1;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setConfig := 0;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayUp := 250;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayDown := 500;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setSignal :=
+	    "=eom01-12b5:4";//LIMITE MÁXIMO DESLOCAMENTO SUBIDA DO ELEVADOR    limitMaximumClimbLift
+	    "fStatus"(#actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status);
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].signal :=
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.getStatus;
+	    
+	    #actual^.limitMaximumClimbLift[0].i += 1;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setConfig := 0;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayUp := 250;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayDown := 500;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setSignal :=
+	    "=eom02-12b5:4";//LIMITE MÁXIMO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    "fStatus"(#actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status);
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].signal :=
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.getStatus;
+	    
+	    #actual^.limitMaximumClimbLift[0].i += 1;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setConfig := 0;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayUp := 250;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayDown := 500;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setSignal :=
+	    "=eom03-12b5:4";//LIMITE MÁXIMO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    "fStatus"(#actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status);
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].signal :=
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.getStatus;
+	    
+	    #actual^.limitMaximumClimbLift[0].i += 1;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setConfig := 0;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayUp := 250;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayDown := 500;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setSignal :=
+	    "=eom04-12b5:4";//LIMITE MÁXIMO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    "fStatus"(#actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status);
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].signal :=
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.getStatus;
+	    
+	    #actual^.limitMaximumClimbLift[0].i += 1;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setConfig := 0;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayUp := 250;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setDelayDown := 500;
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.setSignal :=
+	    "=eom05-12b5:4";//LIMITE MÁXIMO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    "fStatus"(#actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status);
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].signal :=
+	    #actual^.limitMaximumClimbLift[#actual^.limitMaximumClimbLift[0].i].status.getStatus;
+	    
+	    #actual^.slowdownClimbLift[0].i += 1;
+	    #actual^.slowdownClimbLift[#actual^.slowdownClimbLift[0].i].signal :=
+	    "=eom01-12b4:4";//DESACELERACAO DESLOCAMENTO SUBIDA DO ELEVADOR   slowdownClimbLift
+	    #actual^.slowdownClimbLift[0].i += 1;
+	    #actual^.slowdownClimbLift[#actual^.slowdownClimbLift[0].i].signal :=
+	    "=eom02-12b4:4";//DESACELERACAO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    #actual^.slowdownClimbLift[0].i += 1;
+	    #actual^.slowdownClimbLift[#actual^.slowdownClimbLift[0].i].signal :=
+	    "=eom03-12b4:4";//DESACELERACAO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    #actual^.slowdownClimbLift[0].i += 1;
+	    #actual^.slowdownClimbLift[#actual^.slowdownClimbLift[0].i].signal :=
+	    "=eom04-12b4:4";//DESACELERACAO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    #actual^.slowdownClimbLift[0].i += 1;
+	    #actual^.slowdownClimbLift[#actual^.slowdownClimbLift[0].i].signal :=
+	    "=eom05-12b4:4";//DESACELERACAO DESLOCAMENTO SUBIDA DO ELEVADOR
+	    
+	    #actual^.slowdownDescentLift[0].i += 1;
+	    #actual^.slowdownDescentLift[#actual^.slowdownDescentLift[0].i].signal :=
+	    "=eom01-12b3:4";//DESACELERACAO DESLOCAMENTO DESCIDA DO ELEVADOR      slowdownDescentLift
+	    #actual^.slowdownDescentLift[0].i += 1;
+	    #actual^.slowdownDescentLift[#actual^.slowdownDescentLift[0].i].signal :=
+	    "=eom02-12b3:4";//DESACELERACAO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.slowdownDescentLift[0].i += 1;
+	    #actual^.slowdownDescentLift[#actual^.slowdownDescentLift[0].i].signal :=
+	    "=eom03-12b3:4";//DESACELERACAO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.slowdownDescentLift[0].i += 1;
+	    #actual^.slowdownDescentLift[#actual^.slowdownDescentLift[0].i].signal :=
+	    "=eom04-12b3:4";//DESACELERACAO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.slowdownDescentLift[0].i += 1;
+	    #actual^.slowdownDescentLift[#actual^.slowdownDescentLift[0].i].signal :=
+	    "=eom05-12b3:4";//DESACELERACAO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    
+	    #actual^.limitMiddleDescentLift[0].i += 1;
+	    #actual^.limitMiddleDescentLift[#actual^.limitMiddleDescentLift[0].i].signal :=
+	    "=eom01-12b2:4";//LIMITE INTERMEDIÁRIO DESLOCAMENTO DESCIDA DO ELEVADOR   limitMiddleDescentLift
+	    #actual^.limitMiddleDescentLift[0].i += 1;
+	    #actual^.limitMiddleDescentLift[#actual^.limitMiddleDescentLift[0].i].signal :=
+	    "=eom02-12b2:4";//LIMITE INTERMEDIÁRIO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMiddleDescentLift[0].i += 1;
+	    #actual^.limitMiddleDescentLift[#actual^.limitMiddleDescentLift[0].i].signal :=
+	    "=eom03-12b2:4";//LIMITE INTERMEDIÁRIO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMiddleDescentLift[0].i += 1;
+	    #actual^.limitMiddleDescentLift[#actual^.limitMiddleDescentLift[0].i].signal :=
+	    "=eom04-12b2:4";//LIMITE INTERMEDIÁRIO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMiddleDescentLift[0].i += 1;
+	    #actual^.limitMiddleDescentLift[#actual^.limitMiddleDescentLift[0].i].signal :=
+	    "=eom05-12b2:4";//LIMITE INTERMEDIÁRIO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    
+	    #actual^.limitMinimumDescentLift[0].i += 1;
+	    #actual^.limitMinimumDescentLift[#actual^.limitMinimumDescentLift[0].i].signal :=
+	    "=eom01-12b1:4";//LIMITE MÍNIMO DESLOCAMENTO DESCIDA DO ELEVADOR     LimitMinimumDescentLift
+	    #actual^.limitMinimumDescentLift[0].i += 1;
+	    #actual^.limitMinimumDescentLift[#actual^.limitMinimumDescentLift[0].i].signal :=
+	    "=eom02-12b1:4";//LIMITE MÍNIMO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMinimumDescentLift[0].i += 1;
+	    #actual^.limitMinimumDescentLift[#actual^.limitMinimumDescentLift[0].i].signal :=
+	    "=eom03-12b1:4";//LIMITE MÍNIMO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMinimumDescentLift[0].i += 1;
+	    #actual^.limitMinimumDescentLift[#actual^.limitMinimumDescentLift[0].i].signal :=
+	    "=eom04-12b1:4";//LIMITE MÍNIMO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    #actual^.limitMinimumDescentLift[0].i += 1;
+	    #actual^.limitMinimumDescentLift[#actual^.limitMinimumDescentLift[0].i].signal :=
+	    "=eom05-12b1:4";//LIMITE MÍNIMO DESLOCAMENTO DESCIDA DO ELEVADOR
+	    
+	    #actual^.proximitySensor[0].i += 1;
+	    #actual^.proximitySensor[#actual^.proximitySensor[0].i].signal :=
+	    FALSE; //SENSOR DE APROXIMAÇÃO
+	    #actual^.proximitySensor[0].i += 1;
+	    #actual^.proximitySensor[#actual^.proximitySensor[0].i].signal :=
+	    "=eom02-aproxE2"; //SENSOR DE APROXIMAÇÃO
+	    #actual^.proximitySensor[0].i += 1;
+	    #actual^.proximitySensor[#actual^.proximitySensor[0].i].signal :=
+	    "=eom03-aproxE3"; //SENSOR DE APROXIMAÇÃO
+	    #actual^.proximitySensor[0].i += 1;
+	    #actual^.proximitySensor[#actual^.proximitySensor[0].i].signal :=
+	    "=eom04-aproxE4"; //SENSOR DE APROXIMAÇÃO
+	    
+	END_REGION
+	REGION conveyorEncoder
+	    #actual^.conveyorEncoder[0].i += 4;
+	    #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[4]);
+	    #control := REF("dbArchiveControlConveyor".controlConveyor[3].control[1]);
+	    #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse.setSignal :=
+	    "=oven-ovenCounter".%X10;
+	    "fPulseOnRise"(#actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse);
+	    
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse.getSignal THEN
+	        #control := REF("dbArchiveControlConveyor".controlConveyor[4].control[1]);
+	        IF #control^.command.getTurnOnForward THEN
+	            #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i += 1;
+	        END_IF;
+	        IF #control^.command.getTurnOnReturn THEN
+	            #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i -= 1;
+	        END_IF;
+	    END_IF;
+	    
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i > 156 OR
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i < 1 THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i := 1;
+	    END_IF;
+	    
+	    #tempBool := FALSE;
+	    FOR #ia := 1 TO 4 DO
+	        #slot := REF("dbArchiveSlotConveyor".slotConveyor[4].slot[#ia]);
+	        IF #slot^.info.data.getDataReady OR #slot^.info.data.getOccupied THEN
+	            #tempBool := TRUE;
+	        END_IF;
+	    END_FOR;
+	    
+	    IF NOT #tempBool THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i := 1;
+	    END_IF;
+	    
+	    IF (#actual^.skidDetectedFConveyor[3].pulse.getSignal AND #control^.command.getTurnOnForward) THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i := 120;
+	    END_IF;
+	    
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i >= 1 AND
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i <= 98 THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].signal := TRUE;
+	    ELSE
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].signal := FALSE;
+	    END_IF;
+	    
+	    
+	    //
+	    #actual^.conveyorEncoder[0].i += 2;
+	    #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[6]);
+	    #control := REF("dbArchiveControlConveyor".controlConveyor[5].control[1]);
+	    #slot := REF("dbArchiveSlotConveyor".slotConveyor[5].slot[1]);
+	    #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse.setSignal :=
+	    "=pre-preCounter".%X10;
+	    
+	    IF #actual^.skidDetectedAConveyor[6].pulse.getSignal THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i := 150;
+	    END_IF;
+	    
+	    "fPulseOnRise"(#actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse);
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].pulse.getSignal THEN
+	        #control := REF("dbArchiveControlConveyor".controlConveyor[6].control[1]);
+	        IF #control^.command.getTurnOnForward THEN
+	            #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i += 1;
+	        END_IF;
+	        IF #control^.command.getTurnOnReturn THEN
+	            #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i -= 1;
+	        END_IF;
+	    END_IF;
+	    
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i > 156 OR
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i < 1 THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i := 1;
+	    END_IF;
+	    
+	    IF #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i >= 1 AND
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].i <= 98 THEN
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].signal := TRUE;
+	    ELSE
+	        #actual^.conveyorEncoder[#actual^.conveyorEncoder[0].i].signal := FALSE;
+	    END_IF;
+	    
+	END_REGION
+	REGION count qty
+	    #tempInt := #actual^.circuitBreaker[0].i;
+	    #tempInt := #actual^.resetFailure[0].i;
+	    #tempInt := #actual^.minimumSafetyLevel[0].i;
+	    #tempInt := #actual^.maximumSafetyLevel[0].i;
+	    #tempInt := #actual^.maximumLevel[0].i;
+	    #tempInt := #actual^.minimumLevel[0].i;
+	    #tempInt := #actual^.returnedADoor[0].i;
+	    #tempInt := #actual^.advancedADoor[0].i;
+	    #tempInt := #actual^.returnedBDoor[0].i;
+	    #tempInt := #actual^.advancedBDoor[0].i;
+	    #tempInt := #actual^.temperatureOven[0].i;
+	    #tempInt := #actual^.temperatureInBoiler[0].i;
+	    #tempInt := #actual^.temperatureOutBoiler[0].i;
+	    #tempInt := #actual^.temperatureTank[0].i;
+	    #tempInt := #actual^.rightArrow[0].i;
+	    #tempInt := #actual^.rightArrow[0].i;
+	    #tempInt := #actual^.downArrow[0].i;
+	    #tempInt := #actual^.upArrow[0].i;
+	    #tempInt := #actual^.skidDetectedATank[0].i;
+	    #tempInt := #actual^.skidDetectedAConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedAShipping[0].i;
+	    #tempInt := #actual^.resetSafety[0].i;
+	    #tempInt := #actual^.confirmSetupTranslation[0].i;
+	    #tempInt := #actual^.confirmTriggerGearmotorLift[0].i;
+	    #tempInt := #actual^.confirmTriggerGearmotorTranslation[0].i;
+	    #tempInt := #actual^.slowdownDescentLift[0].i;
+	    #tempInt := #actual^.slowdownClimbLift[0].i;
+	    #tempInt := #actual^.slowdownGoTranslation[0].i;
+	    #tempInt := #actual^.slowdownBackTranslation[0].i;
+	    #tempInt := #actual^.positionStopTranslationTank[0].i;
+	    #tempInt := #actual^.limitMinimumDescentLift[0].i;
+	    #tempInt := #actual^.limitMaximumClimbLift[0].i;
+	    #tempInt := #actual^.slowdownGoTranslation[0].i;
+	    #tempInt := #actual^.slowdownBackTranslation[0].i;
+	    #tempInt := #actual^.positionStopTranslationTank[0].i;
+	    #tempInt := #actual^.limitMinimumDescentLift[0].i;
+	    #tempInt := #actual^.limitMaximumClimbLift[0].i;
+	    #tempInt := #actual^.limitMiddleDescentLift[0].i;
+	    #tempInt := #actual^.maximumSafetyTranslation[0].i;
+	    #tempInt := #actual^.minimumSafetyTranslation[0].i;
+	    #tempInt := #actual^.safetyCrashCar[0].i;
+	    #tempInt := #actual^.vibrationSensor[0].i;
+	    #tempInt := #actual^.conductivitySensor[0].i;
+	    #tempInt := #actual^.phMeter[0].i;
+	    #tempInt := #actual^.heatingResistorFailure[0].i;
+	    #tempInt := #actual^.burnerFailure[0].i;
+	    #tempInt := #actual^.chillerFailure[0].i;
+	    #tempInt := #actual^.skidDetectedBConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedCConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedDConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedEConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedFConveyor[0].i;
+	    #tempInt := #actual^.skidDetectedBShipping[0].i;
+	    #tempInt := #actual^.skidDetectedCShipping[0].i;
+	    #tempInt := #actual^.eletronicCircuitBreaker[0].i;
+	    #tempInt := #actual^.powerFailure[0].i;
+	    #tempInt := #actual^."remote"[0].i;
+	    #tempInt := #actual^.thermostatIndication[0].i;
+	    #tempInt := #actual^.stopMotion[0].i;
+	    #tempInt := #actual^.safetyContactorFeedback[0].i;
+	    #tempInt := #actual^.pressureTransmitter[0].i;
+	    #tempInt := #actual^.airConditioningFailure[0].i;
+	    #tempInt := #actual^.flowIndicator[0].i;
+	    #tempInt := #actual^.electricCurrent[0].i;
+	    #tempInt := #actual^.advancedConveyor[0].i;
+	    #tempInt := #actual^.returnedConveyor[0].i;
+	    #tempInt := #actual^.consumptionMeter[0].i;
+	    #tempInt := #actual^.resistorPowerController[0].i;
+	    #tempInt := #actual^.remoteFastModeFR[0].i;
+	    #tempInt := #actual^.remoteFastModeUD[0].i;
+	    #tempInt := #actual^.netDiag[0].i;
+	    #tempInt := #actual^.tankTelegramRecirculation[0].i;
+	    #tempInt := #actual^.conveyorTelegram[0].i;
+	    #tempInt := #actual^.doorTelegram[0].i;
+	    #tempInt := #actual^.exhaustTelegram[0].i;
+	    #tempInt := #actual^.proximitySensor[0].i;
+	    #tempInt := #actual^.conveyorEncoder[0].i;
+	END_REGION
+	REGION global status
+	    #actual^.generalResetFailure.signal := FALSE;
+	    FOR #i := 1 TO #actual^.resetFailure[0].i DO
+	        IF #actual^.resetFailure[#i].signal OR
+	            "dbUtilities".autoReset.getStatus THEN
+	            #actual^.generalResetFailure.signal := TRUE;
+	        END_IF;
+	    END_FOR;
+	    #actual^.generalStopMotion.signal := FALSE;
+	    FOR #i := 1 TO #actual^.stopMotion[0].i DO
+	        IF NOT #actual^.stopMotion[#i].signal THEN
+	            #actual^.generalStopMotion.signal := TRUE;
+	        END_IF;
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

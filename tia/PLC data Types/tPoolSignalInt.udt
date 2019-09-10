@@ -1,0 +1,10 @@
+﻿TYPE "tPoolSignalInt"
+VERSION : 0.8
+   STRUCT
+      scale : "tScale";
+      i : Int;
+      signal : Int;
+   END_STRUCT;
+
+END_TYPE
+

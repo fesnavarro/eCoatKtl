@@ -1,0 +1,12 @@
+﻿TYPE "tPulseOnRise"
+TITLE = tPulseOnRise
+VERSION : 0.8
+//Pulse on rise data type structure
+   STRUCT
+      setSignal : Bool;
+      getSignal : Bool;
+      memory : Bool;
+   END_STRUCT;
+
+END_TYPE
+

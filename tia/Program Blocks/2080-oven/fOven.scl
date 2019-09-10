@@ -1,0 +1,122 @@
+﻿FUNCTION "fOven" : Void
+TITLE = fStove
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : stove
+NAME : '4002'
+VERSION : 0.8
+//Function to parameter of stove
+   VAR_INPUT 
+      location : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      parOven : REF_TO "tParameterOven";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      group : REF_TO "tEquipment";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parOven := REF("dbParOven".parOven[#index.acc]);
+	#equipment := REF("dbArchiveEquipOven".equipmentOven[#index.acc]);
+	
+	#index.pathParent := #index.acc;
+	#index.acc := 0;
+	#equipment^.selectedByInterface := 0;
+	REGION groupScope
+	    CASE #index.pathParent (*parent*)OF
+	        1..4:
+	            #group := REF("dbArchiveGroup".group[5]);
+	    END_CASE;
+	END_REGION
+	REGION interface selected
+	    FOR #i := 1 TO 6 DO
+	        IF #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) AND
+	            #index.acc = "dbInterface".interface[#i].controlId THEN
+	            #equipment^.selectedByInterface := #i;
+	            "dbInterface".interface[#i].auxStatus[2].setSignal := TRUE;
+	            "fStatus"("dbInterface".interface[#i].auxStatus[2]);
+	        END_IF;
+	    END_FOR;
+	END_REGION
+	
+	REGION automatic or manual
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..4:
+	                CASE #index.acc (*control*)OF
+	                    0:
+	                        //set
+	                        #equipment^.autoMan.setDelayOfAuto := 50;
+	                        #equipment^.autoMan.setDelayOfManual := 50;
+	                        #equipment^.autoMan.setPulseSelAutoMan :=
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoMan.setPulseSelAutoMan;
+	                        IF #group^.autoMan.getStsManual THEN
+	                            #equipment^.autoMan.setSelAuto := FALSE;
+	                            #equipment^.autoMan.setSelManual := FALSE;
+	                        ELSE
+	                            #equipment^.autoMan.setSelAuto := TRUE;
+	                            #equipment^.autoMan.setSelManual := TRUE;
+	                        END_IF;
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoMan.getStsManual :=
+	                        #equipment^.autoMan.getStsManual;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoMan"(#equipment^.autoMan);
+	    END_REGION
+	END_REGION
+	
+	REGION automatic and running
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..4:
+	                CASE #index.acc (*control*)OF
+	                    0:
+	                        //set
+	                        #equipment^.autoRun.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #equipment^.autoRun.setDelayTurnOff := 50;
+	                        #equipment^.autoRun.setDelayTurnOn := 50;
+	                        #equipment^.autoRun.setPulseSelAutoRun :=
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoRun.setPulseSelAutoRun;
+	                        #equipment^.autoRun.setSelTurnOn := #group^.autoRun.getStsAutoRun;
+	                        #equipment^.autoRun.setSelTurnOff := NOT #group^.autoRun.getStsAutoRun;
+	                        #equipment^.autoRun.setStsAuto :=
+	                        #equipment^.autoMan.getStsAuto;
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoRun.getStsAutoRun :=
+	                        #equipment^.autoRun.getStsAutoRun;
+	                END_CASE;
+	        END_CASE;
+	        
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoRun"(#equipment^.autoRun);
+	    END_REGION
+	END_REGION
+	
+	REGION controls
+	    "fSizeArray"(size => #index.qty,
+	                 io_Array := "dbArchiveControlOven".controlOven[#index.pathParent].control);
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "fOcontrol"(location:=#location,
+	                    index := #index);
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

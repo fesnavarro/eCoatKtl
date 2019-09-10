@@ -1,0 +1,12 @@
+﻿TYPE "tSkid"
+VERSION : 0.8
+   STRUCT
+      recipe : Word;
+      log : Array[-2..60] of Struct
+         delivered { S7_SetPoint := 'True'} : Date_And_Time;
+      END_STRUCT;
+      status : Word;
+   END_STRUCT;
+
+END_TYPE
+

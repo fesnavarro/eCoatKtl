@@ -1,0 +1,9 @@
+﻿DATA_BLOCK "dbArchiveControlTank"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+"fbArchiveControlTank"
+
+BEGIN
+
+END_DATA_BLOCK
+

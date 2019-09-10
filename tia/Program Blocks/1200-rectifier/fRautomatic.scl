@@ -1,0 +1,202 @@
+﻿FUNCTION "fRautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parRectifier : REF_TO "tParameterRectifier";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      tank : REF_TO "tEquipment";
+      controlTank : REF_TO "tControl";
+      tempInt : Int;
+      tempbool : Bool;
+      i : "tIndex";
+      tempDint : DInt;
+      parRecipes : REF_TO "tRecipes";
+      autoRectifier : REF_TO "tAutoRectifier";
+      ib : Int;
+      autoEom : REF_TO "tAutoEom";
+      slotTank : REF_TO "tSlot";
+      controlEom : REF_TO "tControl";
+      skid : REF_TO "tSkid";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parRectifier := REF("dbArchiveParRectifier".parRectifier[#index.pathParent]);
+	#equipment := REF("dbArchiveEquipRectifier".equipmentRectifier[#index.pathParent]);
+	#tank := REF("dbEquipTank".equipmentTank[14]);
+	#controlTank := REF("dbArchiveControlTank".controlTank[14].control[1]);
+	#autoRectifier := REF("dbArchiveAutoRectifier".autoRectifier[#index.pathParent]);
+	
+	#slotTank := REF("dbArchiveSlotTank".SlotTank[14].slot[1]);
+	#skid := REF("dbBuffer".skid[#slotTank^.info.data.skid]);
+	#parRecipes := REF("dbParRecipes".parRecipes[#skid^.recipe]);
+	
+	#parRectifier^.qtyOfStages := #parRecipes^.rectifier.qtyOfStages;
+	#parRectifier^.setDelayRamp := #parRecipes^.rectifier.setDelayRamp;
+	#parRectifier^.setDelayTime := #parRecipes^.rectifier.setDelayTime;
+	#parRectifier^.setVoltage := #parRecipes^.rectifier.setVoltage;
+	
+	#tempbool := TRUE;
+	#setAutoForward := FALSE;
+	
+	CASE #index.pathParent (*parent*)OF
+	    1:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                IF #parRectifier^.qtyOfStages > 5 THEN
+	                    #parRectifier^.qtyOfStages := 5;
+	                END_IF;
+	                IF #parRectifier^.qtyOfStages < 1 THEN
+	                    #parRectifier^.qtyOfStages := 1;
+	                END_IF;
+	                #i.qty := #parRectifier^.qtyOfStages;
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                    #action^.powerRangeControl[14].signal  := 0;
+	                    FOR #i.acc := 1 TO #i.qty DO
+	                        REGION ramp
+	                            #autoRectifier^.ramp[#i.acc].setSignal := FALSE;
+	                            "fStatus"(#autoRectifier^.ramp[#i.acc]);
+	                        END_REGION
+	                        REGION time
+	                            #autoRectifier^."time"[#i.acc].setSignal := FALSE;
+	                            "fStatus"(#autoRectifier^."time"[#i.acc]);
+	                        END_REGION
+	                        REGION scaleRamp
+	                            #autoRectifier^.scaleRamp[#i.acc].setInputMax := 0;
+	                            #autoRectifier^.scaleRamp[#i.acc].setInputMin := 0;
+	                            #autoRectifier^.scaleRamp[#i.acc].setScaleMax := 0;
+	                            #autoRectifier^.scaleRamp[#i.acc].setScaleMin := 0;
+	                            #autoRectifier^.scaleRamp[#i.acc].setSignal := 0;
+	                            "fScale"(#autoRectifier^.scaleRamp[#i.acc]);
+	                            #parRectifier^.getRamp[#i.acc] :=
+	                            (DINT_TO_INT(#autoRectifier^.ramp[#i.acc].timeUpDown[0].ET / 1000));
+	                        END_REGION
+	                        REGION scaleOutput
+	                            #autoRectifier^.scaleOutput.setSignal := 0;
+	                            #autoRectifier^.scaleOutput.setInputMax := 512;
+	                            #autoRectifier^.scaleOutput.setInputMin := 0;
+	                            #autoRectifier^.scaleOutput.setScaleMax := 28200;
+	                            #autoRectifier^.scaleOutput.setScaleMin := 0;
+	                            "fScale"(#autoRectifier^.scaleOutput);
+	                            #action^.powerRangeControl[#index.pathParent].signal  :=
+	                            REAL_TO_INT(#autoRectifier^.scaleOutput.getResult);
+	                        END_REGION
+	                    END_FOR;
+	                ELSE
+	                    REGION start
+	                        FOR #ib := 1 TO 4 DO
+	                            #autoEom := REF("dbArchiveAutoEom".autoEom[#ib]);
+	                            #tempbool := FALSE;
+	                            IF (REAL_TO_DINT(#autoEom^.translationPosition) = 14) THEN
+	                                #tempbool := TRUE;
+	                                EXIT;
+	                            END_IF;
+	                        END_FOR;
+	                        IF (NOT #actual^.minimumLevel[14].signal OR
+	                            #actual^.minimumSafetyLevel[14].signal) AND
+	                            #controlTank^.outputMotorDrive.getStart AND
+	                            NOT #tempbool AND
+	                            //falta falha retificador, carro fora, e portao fechado
+	                            #actual^.skidDetectedATank[14].signal THEN //falta receita definida
+	                            #setAutoForward := TRUE;
+	                        END_IF;
+	                    END_REGION
+	                    
+	                    FOR #i.acc := 1 TO #i.qty DO
+	                        REGION ramp                            
+	                            #autoRectifier^.ramp[#i.acc].setConfig := 0;
+	                            #autoRectifier^.ramp[#i.acc].setDelayUp :=
+	                            (INT_TO_DINT(#parRectifier^.setDelayRamp[#i.acc]) * 1000);
+	                            IF #i.acc = 1 THEN
+	                                #autoRectifier^.ramp[#i.acc].setSignal := #setAutoForward;
+	                            ELSE
+	                                #autoRectifier^.ramp[#i.acc].setSignal :=
+	                                #autoRectifier^."time"[#i.acc - 1].getStatus;
+	                            END_IF;
+	                            #autoRectifier^.ramp[#i.acc].setDelayDown := 0;
+	                            "fStatus"(#autoRectifier^.ramp[#i.acc]);
+	                            
+	                            #autoRectifier^.scaleRamp[#i.acc].setInputMax := #autoRectifier^.ramp[#i.acc].setDelayUp;
+	                            #autoRectifier^.scaleRamp[#i.acc].setInputMin := 0;
+	                            #autoRectifier^.scaleRamp[#i.acc].setScaleMax := #parRectifier^.setVoltage[#i.acc];
+	                            #autoRectifier^.scaleRamp[#i.acc].setScaleMin := #parRectifier^.setVoltage[#i.acc - 1];
+	                            #autoRectifier^.scaleRamp[#i.acc].setSignal :=
+	                            DINT_TO_REAL(#autoRectifier^.ramp[#i.acc].timeUpDown[0].ET);
+	                            "fScale"(#autoRectifier^.scaleRamp[#i.acc]);
+	                            #parRectifier^.getRamp[#i.acc] :=
+	                            (DINT_TO_INT(#autoRectifier^.ramp[#i.acc].timeUpDown[0].ET / 1000));
+	                        END_REGION
+	                        
+	                        REGION time
+	                            #autoRectifier^."time"[#i.acc].setConfig := 0;
+	                            #autoRectifier^."time"[#i.acc].setDelayUp :=
+	                            (INT_TO_DINT(#parRectifier^.setDelayTime[#i.acc]) * 1000);
+	                            #autoRectifier^."time"[#i.acc].setSignal :=
+	                            #autoRectifier^.ramp[#i.acc].getStatus;
+	                            #autoRectifier^."time"[#i.acc].setDelayDown := 0;
+	                            "fStatus"(#autoRectifier^."time"[#i.acc]);
+	                            #parRectifier^.getTime[#i.acc] :=
+	                            (DINT_TO_INT(#autoRectifier^."time"[#i.acc].timeUpDown[0].ET / 1000));
+	                        END_REGION
+	                        
+	                        REGION scaleOutput
+	                            IF NOT #autoRectifier^."time"[#i.acc].getStatus AND
+	                                #autoRectifier^.ramp[#i.acc].timeUpDown[0].IN THEN
+	                                #autoRectifier^.scaleOutput.setSignal :=
+	                                #autoRectifier^.scaleRamp[#i.acc].getResult;
+	                                #autoRectifier^.scaleOutput.setInputMax := 512;
+	                                #autoRectifier^.scaleOutput.setInputMin := 0;
+	                                #autoRectifier^.scaleOutput.setScaleMax := 29000;
+	                                #autoRectifier^.scaleOutput.setScaleMin := 0;
+	                                "fScale"(#autoRectifier^.scaleOutput);
+	                                #action^.powerRangeControl[#index.pathParent].signal  :=
+	                                REAL_TO_INT(#autoRectifier^.scaleOutput.getResult);
+	                            END_IF;
+	                            REGION releaseToTake
+	                                #slotTank := REF("dbArchiveSlotTank".SlotTank[14].slot[1]);
+	                                IF #autoRectifier^."time"[#i.qty].getStatus AND
+	                                    NOT #slotTank^.loading AND
+	                                    #slotTank^.loaded THEN
+	                                    #slotTank^.releasedTake := TRUE;
+	                                END_IF;
+	                            END_REGION
+	                                
+	                        END_REGION
+	                    END_FOR;
+	                    
+	                    IF #autoRectifier^."time"[#i.qty].getStatus OR
+	                        NOT #setAutoForward THEN
+	                        #setAutoForward := FALSE;
+	                        REGION scaleOutput
+	                            #autoRectifier^.scaleOutput.setSignal := 0;
+	                            #autoRectifier^.scaleOutput.setInputMax := 512;
+	                            #autoRectifier^.scaleOutput.setInputMin := 0;
+	                            #autoRectifier^.scaleOutput.setScaleMax := 28200;
+	                            #autoRectifier^.scaleOutput.setScaleMin := 0;
+	                            "fScale"(#autoRectifier^.scaleOutput);
+	                            #action^.powerRangeControl[#index.pathParent].signal  :=
+	                            REAL_TO_INT(#autoRectifier^.scaleOutput.getResult);
+	                        END_REGION
+	                    END_IF;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+END_FUNCTION
+

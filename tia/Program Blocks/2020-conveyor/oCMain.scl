@@ -1,0 +1,27 @@
+﻿FUNCTION "oCMain" : Void
+TITLE = oCMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '2000'
+VERSION : 0.8
+//main control conveyor
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipConveyor".equipmentConveyor);
+	#location := 2020;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fConveyor"(index := #index,
+	                location := #location);
+	END_FOR;
+END_FUNCTION
+

@@ -1,0 +1,228 @@
+﻿FUNCTION "fTautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parTank : REF_TO "tParameterTank";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      autoTank : REF_TO "tAutoTank";
+      autoEom : REF_TO "tAutoEom";
+      tempInt : Int;
+      tempDINT : DInt;
+      ib : Int;
+      autoRectifier : REF_TO "tAutoRectifier";
+      controlEom : REF_TO "tControl";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parTank := REF("dbParTank".parTank[#index.pathParent]);
+	#equipment := REF("dbEquipTank".equipmentTank[#index.pathParent]);
+	#control := REF("dbArchiveControlTank".controlTank[#index.pathParent].control[#index.acc]);
+	#autoTank := REF("dbArchiveAutoTank".autoTank[#index.pathParent]);
+	
+	CASE #index.pathParent (*equipment*)OF
+	    1..25:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    IF NOT "dbUtilities".powerBackupEnable.getStatus THEN
+	                        #setAutoForward := TRUE;
+	                    END_IF;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	    CASE #index.pathParent (*equipment*)OF
+	        1..2,5..6:
+	            CASE #index.acc (*control*)OF
+	                5:
+	                    IF NOT #autoRunEnable THEN
+	                        #setAutoForward := FALSE;
+	                        #setAutoReturn := FALSE;
+	                    ELSE
+	                        IF NOT "dbUtilities".powerBackupEnable.getStatus THEN
+	                            #setAutoForward := TRUE;
+	                        END_IF;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    4,9,13:
+	        CASE #index.acc (*control*)OF
+	            4:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    IF NOT "dbUtilities".powerBackupEnable.getStatus THEN
+	                        #setAutoForward := TRUE;
+	                    END_IF;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    1..2, 5..8,10..11, 17, 23:
+	        CASE #index.acc (*control*)OF
+	            4:
+	                IF #actual^.minimumLevel[#index.pathParent].signal THEN
+	                    #autoTank^.standard.on := TRUE;
+	                ELSIF #actual^.maximumLevel[#index.pathParent].signal THEN
+	                    #autoTank^.standard.on := FALSE;
+	                END_IF;
+	                IF #autoTank^.standard.on THEN
+	                    #setAutoForward := TRUE;
+	                END_IF;
+	                
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    16:
+	        CASE #index.acc (*control*)OF
+	            4:
+	                "fStatus"(#autoTank^.standard.status[1]);
+	                IF #actual^.minimumLevel[#index.pathParent - 2].signal THEN
+	                    #autoTank^.standard.on := TRUE;
+	                ELSIF #actual^.maximumLevel[#index.pathParent-2].signal THEN
+	                    #autoTank^.standard.on := FALSE;
+	                END_IF;
+	                IF #autoTank^.standard.on THEN
+	                    #autoTank^.standard.status[1].setReset := FALSE;
+	                    #autoTank^.standard.status[1].setConfig := 2;
+	                    #autoTank^.standard.status[1].setSignal := TRUE;
+	                    #autoTank^.standard.status[1].setDelayDown :=
+	                    ((INT_TO_DINT(#parTank^.timeBreakReplacement) * 1000) * 60);
+	                    #autoTank^.standard.status[1].setDelayUp :=
+	                    (INT_TO_DINT(#parTank^.timeOpenReplacement) * 1000);
+	                    
+	                    IF NOT #autoTank^.standard.status[1].getStatus THEN
+	                        #setAutoForward := TRUE;
+	                    ELSE
+	                        #setAutoForward := FALSE;
+	                    END_IF;
+	                ELSE
+	                    #autoTank^.standard.status[1].setReset := TRUE;
+	                    #autoTank^.standard.status[1].setSignal := FALSE;
+	                    #setAutoForward := FALSE;
+	                END_IF;
+	                
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    1..2:
+	        CASE #index.acc (*control*)OF
+	            2:
+	                IF #actual^.temperatureTank[#index.pathParent].signal <
+	                    #parTank^.setPointTemp +
+	                    #parTank^.hysteresisOnTemp THEN
+	                    #autoTank^.standard.work := TRUE;
+	                END_IF;
+	                
+	                IF #actual^.temperatureTank[#index.pathParent].signal >
+	                    #parTank^.setPointTemp +
+	                    #parTank^.hysteresisOffTemp THEN
+	                    #autoTank^.standard.work := FALSE;
+	                END_IF;
+	                
+	                IF #autoTank^.standard.work THEN
+	                    #setAutoForward := TRUE;
+	                ELSE
+	                    #setAutoForward := FALSE;
+	                END_IF;
+	                
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    5..6:
+	        CASE #index.acc (*control*)OF
+	            6:
+	                IF #actual^.temperatureTank[#index.pathParent].signal <
+	                    #parTank^.setPointTemp +
+	                    #parTank^.hysteresisOnTemp THEN
+	                    #autoTank^.standard.work := TRUE;
+	                END_IF;
+	                
+	                IF #actual^.temperatureTank[#index.pathParent].signal >
+	                    #parTank^.setPointTemp +
+	                    #parTank^.hysteresisOffTemp THEN
+	                    #autoTank^.standard.work := FALSE;
+	                END_IF;
+	                
+	                IF #autoTank^.standard.work THEN
+	                    #setAutoForward := TRUE;
+	                ELSE
+	                    #setAutoForward := FALSE;
+	                END_IF;
+	                
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    14:
+	        CASE #index.acc (*control*)OF
+	            2:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    IF NOT "dbUtilities".powerBackupEnable.getStatus THEN
+	                        #setAutoForward := TRUE;
+	                    END_IF;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*equipment*)OF
+	    19..20:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    IF #actual^.maximumLevel[#index.pathParent].signal THEN
+	                        #autoTank^.standard.work := TRUE;
+	                    END_IF;
+	                    IF #actual^.minimumLevel[#index.pathParent].signal THEN
+	                        #autoTank^.standard.work := FALSE;
+	                    END_IF;
+	                    #setAutoForward := #autoTank^.standard.work;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	
+	
+	
+	
+END_FUNCTION
+

@@ -1,0 +1,41 @@
+﻿FUNCTION_BLOCK "fbArchiveParExhaust"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR DB_SPECIFIC
+      dataParExhaust { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..100] of DWord;
+      formatParExhaust { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} AT dataParExhaust : Array[1..3] of "tParameterExhaust";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => "dbParExhaust".ia.qty,
+	             io_Array := "dbParExhaust".parExhaust);
+	"dbParExhaust".firstRunning.setConfig := 0;
+	"dbParExhaust".firstRunning.setDelayUp := 5000;
+	"dbParExhaust".firstRunning.setDelayDown := 0;
+	"dbParExhaust".firstRunning.setSignal := TRUE;
+	"fStatus"("dbParExhaust".firstRunning);
+	
+	IF "dbParExhaust".firstRunning.getStatus THEN
+	    REGION saveData
+	        IF "dbParExhaust".ia.acc >= "dbParExhaust".ia.qty THEN
+	            "dbParExhaust".ia.acc := 0;
+	        END_IF;
+	        "dbParExhaust".ia.acc += 1;
+	        #formatParExhaust["dbParExhaust".ia.acc] :=
+	        "dbParExhaust".parExhaust["dbParExhaust".ia.acc];
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR "dbParExhaust".ia.acc := 1 TO "dbParExhaust".ia.qty DO
+	            "dbParExhaust".parExhaust["dbParExhaust".ia.acc] :=
+	            #formatParExhaust["dbParExhaust".ia.acc];
+	        END_FOR;
+	    END_REGION
+	END_IF;
+END_FUNCTION_BLOCK
+

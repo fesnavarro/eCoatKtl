@@ -1,0 +1,41 @@
+﻿FUNCTION_BLOCK "fbArchiveParTank"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR DB_SPECIFIC
+      dataParTank { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..500] of DWord;
+      formatParTank { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} AT dataParTank : Array[1..25] of "tParameterTank";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => "dbParTank".ia.qty,
+	             io_Array := "dbParTank".parTank);
+	"dbParTank".firstRunning.setConfig := 0;
+	"dbParTank".firstRunning.setDelayUp := 5000;
+	"dbParTank".firstRunning.setDelayDown := 0;
+	"dbParTank".firstRunning.setSignal := TRUE;
+	"fStatus"("dbParTank".firstRunning);
+	
+	IF "dbParTank".firstRunning.getStatus THEN
+	    REGION saveData
+	        IF "dbParTank".ia.acc >= "dbParTank".ia.qty THEN
+	            "dbParTank".ia.acc := 0;
+	        END_IF;
+	        "dbParTank".ia.acc += 1;
+	        #formatParTank["dbParTank".ia.acc] :=
+	        "dbParTank".parTank["dbParTank".ia.acc];
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR "dbParTank".ia.acc := 1 TO "dbParTank".ia.qty DO
+	            "dbParTank".parTank["dbParTank".ia.acc] :=
+	            #formatParTank["dbParTank".ia.acc];
+	        END_FOR;
+	    END_REGION
+	END_IF;
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,12 @@
+﻿TYPE "tParameterOven"
+VERSION : 0.8
+   STRUCT
+      setPointTemp : Int;
+      tempOffset : Int;
+      hysteresisOnTemp : Int;
+      hysteresisOffTemp : Int;
+      hysteresisStageOne : Int;
+   END_STRUCT;
+
+END_TYPE
+

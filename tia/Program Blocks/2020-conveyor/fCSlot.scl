@@ -1,0 +1,798 @@
+﻿FUNCTION "fCSlot" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      parConveyor : REF_TO "tParameterConveyor";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      parent : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      slot : REF_TO "tSlot";
+      parRecipes : REF_TO "tRecipes";
+      tempDint : DInt;
+      autoConveyor : REF_TO "tAutoConveyor";
+      info : REF_TO "tInfoControl";
+      data : REF_TO "tData";
+      slotF : REF_TO "tSlot";
+      translation : REF_TO "tControl";
+      lift : REF_TO "tControl";
+      slotB : REF_TO "tSlot";
+      autoEom : REF_TO "tAutoEom";
+      slotMaster : REF_TO "tSlot";
+      controlF : REF_TO "tControl";
+      autoConveyorMaster : REF_TO "tAutoConveyor";
+      tempBool : Bool;
+      ia : Int;
+      ib : Int;
+      slotFF : REF_TO "tSlot";
+      ig : Int;
+      autoConveyorF : REF_TO "tAutoConveyor";
+      skid : REF_TO "tSkid";
+   END_VAR
+
+
+BEGIN
+	#slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc]);
+	#skid := REF("dbBuffer".skid[#slot^.info.data.skid]);
+	#parRecipes := REF("dbParRecipes".parRecipes[#skid^.recipe]);
+	#actual := REF("dbData".actual);
+	#translation := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	#lift := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[2]);
+	#parent := REF("dbArchiveEquipConveyor".equipmentConveyor[#index.pathParent]);
+	#autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	
+	REGION disableScan
+	    CASE #index.pathParent (*parent*)OF
+	        1..2,5:
+	            CASE #index.acc (*control*)OF
+	                2..8:
+	                    RETURN;
+	            END_CASE;
+	        3:
+	            CASE #index.acc (*control*)OF
+	                7..8:
+	                    RETURN;
+	            END_CASE;
+	        4:
+	            CASE #index.acc (*control*)OF
+	                5..8:
+	                    RETURN;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+	
+	CASE #index.pathParent OF
+	    1..6:
+	        CASE #index.acc OF
+	            1..8:
+	                REGION releasedToTake
+	                    #slot^."time"[1].setConfig := 0;
+	                    #slot^."time"[1].setDelayDown := 0;
+	                    #slot^."time"[1].setSignal := #slot^.info.data.getOccupied;
+	                    IF #index.pathParent <= 2 THEN
+	                        #slot^."time"[1].setDelayUp := (INT_TO_DINT(#parRecipes^.timeOfTreatment[17 + #index.pathParent]) * 1000);
+	                    END_IF;
+	                    IF #index.pathParent = 3 THEN
+	                        #slot^."time"[1].setDelayUp := (INT_TO_DINT(#parRecipes^.timeOfTreatment[19 + #index.acc]) * 1000);
+	                    END_IF;
+	                    IF #index.pathParent = 4 THEN
+	                        #slot^."time"[1].setDelayUp := (INT_TO_DINT(#parRecipes^.timeOfTreatment[25 + #index.acc]) * 1000);
+	                    END_IF;
+	                    IF #index.pathParent = 5 THEN
+	                        #slot^."time"[1].setDelayUp := (INT_TO_DINT(#parRecipes^.timeOfTreatment[29 + #index.acc]) * 1000);
+	                    END_IF;
+	                    IF #index.pathParent = 6 THEN
+	                        #slot^."time"[1].setDelayUp := (INT_TO_DINT(#parRecipes^.timeOfTreatment[30 + #index.acc]) * 1000);
+	                    END_IF;
+	                    
+	                    #slot^.timeOfTreatment := (DINT_TO_INT(#slot^."time"[1].timeUpDown[0].PT / 1000 - #slot^."time"[1].timeUpDown[0].ET / 1000));
+	                    "fStatus"(#slot^."time"[1]);
+	                    
+	                    IF #slot^."time"[1].getStatus THEN
+	                        #slot^.releasedTake := TRUE;
+	                    END_IF;
+	                    
+	                    IF NOT #slot^.info.data.getOccupied THEN
+	                        #slot^.releasedTake := FALSE;
+	                    END_IF;
+	                    
+	                    IF ((#index.pathParent = 3 AND #index.acc = 6) OR
+	                        (#index.pathParent = 4)) AND
+	                        #slot^.releasedTake THEN
+	                        FOR #ia := 1 TO #index.acc - 1 DO
+	                            #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].#slot[#ia]);
+	                            #slotB^.releasedTake := #slotB^.info.data.getOccupied;
+	                        END_FOR;
+	                    END_IF;
+	                    
+	                    IF #index.pathParent = 4 AND
+	                        #slot^.releasedTake THEN
+	                        FOR #ia := 1 TO 8 DO
+	                            #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent-1].#slot[#ia]);
+	                            #slotB^.releasedTake := #slotB^.info.data.getOccupied;
+	                        END_FOR;
+	                    END_IF;
+	                    
+	                    IF (#index.pathParent = 4 OR
+	                        #index.pathParent = 5) AND
+	                        #slot^.releasedTake THEN
+	                        FOR #ia := 1 TO 8 DO
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].#slot[#ia]);
+	                            #slotF^.releasedTake := #slotF^.info.data.getOccupied;
+	                        END_FOR;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	
+	CASE #index.pathParent OF
+	    1:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    IF (#actual^.skidDetectedAConveyor[#index.pathParent].signal OR
+	                        #actual^.skidDetectedBConveyor[#index.pathParent].signal OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    2:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    IF (#actual^.skidDetectedAConveyor[#index.pathParent].signal OR
+	                        #actual^.skidDetectedBConveyor[#index.pathParent].signal OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    3:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc + 1]);
+	                    IF ((#actual^.skidDetectedBConveyor[#index.pathParent].signal AND
+	                        NOT #slotF^.loaded AND NOT #slotF^.loading) OR
+	                        (#slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0)) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	            2:
+	                REGION loading
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc - 1]);
+	                    IF ((#actual^.skidDetectedBConveyor[#index.pathParent].signal AND
+	                        NOT #slotB^.loaded) OR
+	                        (#slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0)) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	            3:
+	                REGION loading
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc + 1]);
+	                    IF ((#actual^.skidDetectedCConveyor[#index.pathParent].signal AND
+	                        NOT #slotF^.loaded AND NOT #slotF^.loading) OR
+	                        (#slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0)) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	            4:
+	                REGION loading
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc - 1]);
+	                    IF ((#actual^.skidDetectedCConveyor[#index.pathParent].signal AND
+	                        NOT #slotB^.loaded) OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	            5:
+	                REGION loading
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc + 1]);
+	                    IF ((#actual^.skidDetectedFConveyor[#index.pathParent].signal AND
+	                        NOT #slotF^.loaded AND NOT #slotF^.loading) OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	            6:
+	                REGION loading
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc - 1]);
+	                    IF ((#actual^.skidDetectedFConveyor[#index.pathParent].signal AND
+	                        NOT #slotB^.loaded) OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    4:
+	        CASE #index.acc OF
+	            1..4:
+	                REGION loading
+	                    IF (#slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    5:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    IF (#actual^.skidDetectedAConveyor[#index.pathParent].signal OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    6:
+	        CASE #index.acc OF
+	            1..8:
+	                REGION loading
+	                    IF (#slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0) AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    1:
+	        CASE #index.acc OF
+	            1:
+	                REGION loaded
+	                    #autoEom := REF("dbArchiveAutoEom".autoEom[4]);
+	                    IF #autoEom^.translationPosition <= 17.9 AND
+	                        #actual^.skidDetectedBConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 18 THEN
+	                        #skid^.status := INT_TO_WORD(18);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT(DTL_TO_DT("dbUtilities".dateTime));
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    2:
+	        CASE #index.acc OF
+	            1:
+	                REGION loaded
+	                    IF (#actual^.skidDetectedAConveyor[#index.pathParent].status.getStatus AND
+	                        #actual^.skidDetectedBConveyor[#index.pathParent].status.getStatus) THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 19 THEN
+	                        #skid^.status := INT_TO_WORD(19);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT(DTL_TO_DT("dbUtilities".dateTime));
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    3:
+	        CASE #index.acc OF
+	            1:
+	                REGION loaded
+	                    IF NOT #actual^.skidDetectedAConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 20 THEN
+	                        #skid^.status := INT_TO_WORD(20);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            2:
+	                REGION loaded
+	                    
+	                    IF #actual^.skidDetectedBConveyor[#index.pathParent].status.getStatus THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[6]);
+	                    IF NOT #slotF^.info.data.getOccupied AND #slotF^.info.data.getDataReady THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent+1].slot[1]);
+	                    IF NOT #slotF^.info.data.getOccupied AND #slotF^.info.data.getDataReady THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 21 THEN
+	                        #skid^.status := INT_TO_WORD(21);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            3:
+	                REGION loaded
+	                    IF NOT #actual^.skidDetectedBConveyor[#index.pathParent].status.getStatus AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 22 THEN
+	                        #skid^.status := INT_TO_WORD(22);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            4:
+	                REGION loaded
+	                    IF #actual^.skidDetectedCConveyor[#index.pathParent].status.getStatus THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 23 THEN
+	                        #skid^.status := INT_TO_WORD(23);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            5:
+	                REGION loaded
+	                    IF #actual^.skidDetectedDConveyor[#index.pathParent].status.getStatus AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 24 THEN
+	                        #skid^.status := INT_TO_WORD(24);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            6:
+	                REGION loaded
+	                    IF #actual^.skidDetectedFConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 25 THEN
+	                        #skid^.status := INT_TO_WORD(25);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    4:
+	        CASE #index.acc OF
+	            1..4:
+	                REGION loaded
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    IF #actual^.conveyorEncoder[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF NOT #slotB^.info.data.getOccupied AND
+	                        #slotB^.info.data.getDataReady AND
+	                        #actual^.skidDetectedFConveyor[#index.pathParent-1].signal THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady  THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 25 + #index.acc THEN
+	                        #skid^.status := INT_TO_WORD(25 + #index.acc);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    5:
+	        CASE #index.acc OF
+	            1:
+	                REGION loaded
+	                    IF #actual^.skidDetectedAConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 30 THEN
+	                        #skid^.status := INT_TO_WORD(30);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    6:
+	        CASE #index.acc OF
+	            1:
+	                REGION loaded
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[8]);
+	                    IF #actual^.conveyorEncoder[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF #actual^.skidDetectedAConveyor[#index.pathParent-1].signal OR
+	                        #actual^.skidDetectedAConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF NOT #slotF^.info.data.getOccupied AND #slotF^.info.data.getDataReady THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 30 + #index.acc THEN
+	                        #skid^.status := INT_TO_WORD(30 + #index.acc);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            2..7:
+	                REGION loaded
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[8]);
+	                    IF #actual^.conveyorEncoder[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF #actual^.skidDetectedAConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF NOT #slotF^.info.data.getOccupied AND #slotF^.info.data.getDataReady THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 30 + #index.acc THEN
+	                        #skid^.status := INT_TO_WORD(30 + #index.acc);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	            8:
+	                REGION loaded
+	                    IF #actual^.skidDetectedBConveyor[#index.pathParent].signal AND
+	                        #actual^.skidDetectedCConveyor[#index.pathParent].signal AND
+	                        #actual^.conveyorEncoder[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := TRUE;
+	                    ELSE
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    IF #actual^.skidDetectedAConveyor[#index.pathParent].signal THEN
+	                        #slot^.auxPulse.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#slot^.auxPulse);
+	                    IF #slot^.auxPulse.getSignal AND
+	                        #slot^.info.data.getDataReady THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #skid^.status <> 30 + #index.acc THEN
+	                        #skid^.status := INT_TO_WORD(30 + #index.acc);
+	                        #skid^.log[#skid^.status].delivered := DTL_TO_DT("dbUtilities".dateTime);
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    1:
+	        CASE #index.acc OF
+	            1:
+	                REGION releasedToDelivery
+	                    #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	                    IF NOT #slot^.info.data.getOccupied AND
+	                        NOT #slot^.info.data.getDataReady AND
+	                        NOT #slot^.loading AND
+	                        NOT #slot^.delivering AND
+	                        NOT #autoConveyor^.standard.forward AND
+	                        NOT #autoConveyor^.standard."return" THEN
+	                        #slot^.releasedDelivery := TRUE;
+	                    ELSE
+	                        #slot^.releasedDelivery := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    2..6:
+	        CASE #index.acc OF
+	            1..8:
+	                REGION releasedToDelivery
+	                    #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	                    IF NOT #slot^.info.data.getOccupied AND
+	                        NOT #slot^.info.data.getDataReady AND
+	                        NOT #slot^.loading AND
+	                        NOT #autoConveyor^.standard.forward AND
+	                        NOT #autoConveyor^.standard."return" THEN
+	                        #slot^.releasedDelivery := TRUE;
+	                    ELSE
+	                        #slot^.releasedDelivery := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    1..6:
+	        CASE #index.acc OF
+	            1..8:
+	                REGION delivering
+	                    IF #slot^.releasedTake THEN
+	                        #slot^.delivering := TRUE;
+	                    ELSE
+	                        #slot^.delivering := FALSE;
+	                    END_IF;
+	                    
+	                    IF (#index.pathParent = 3 AND #index.acc >= 1 AND #index.acc <= 5) OR
+	                        (#index.pathParent = 4 AND #index.acc >= 1 AND #index.acc <= 3) OR
+	                        (#index.pathParent = 6 AND #index.acc >= 1 AND #index.acc <= 7) THEN
+	                        #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc+1]);
+	                        IF #slotF^.info.data.getOccupied THEN
+	                            #slot^.delivering := FALSE;
+	                        END_IF;
+	                    END_IF;
+	                    
+	                    IF (#index.pathParent = 1 AND #index.acc >= 1) OR
+	                        (#index.pathParent = 2 AND #index.acc >= 1) OR
+	                        (#index.pathParent = 3 AND #index.acc >= 5) OR
+	                        (#index.pathParent = 4 AND #index.acc >= 4) OR
+	                        (#index.pathParent = 5 AND #index.acc >= 1) THEN
+	                        FOR #ia := 1 TO 8 DO
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[#ia]);
+	                            #autoConveyorF := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent+1]);
+	                            IF #slotF^.info.data.getOccupied OR
+	                                #autoConveyorF^.standard.forward THEN
+	                                IF (#index.pathParent = 3 AND #index.acc = 5) AND
+	                                    (NOT #actual^.advancedADoor[2].signal AND
+	                                    NOT #actual^.advancedBDoor[2].signal) THEN
+	                                    ;
+	                                ELSE
+	                                    #slot^.delivering := FALSE;
+	                                END_IF;
+	                            END_IF;
+	                        END_FOR;
+	                        
+	                        IF (#index.pathParent = 2 AND #index.acc >= 1) THEN
+	                            FOR #ia := 1 TO 2 DO
+	                                #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[#ia]);
+	                                IF #slotF^.info.data.getDataReady THEN
+	                                    #slot^.delivering := FALSE;
+	                                END_IF;
+	                            END_FOR;
+	                        END_IF;
+	                        
+	                    ELSIF (#index.pathParent = 6 AND #index.acc >= 8) THEN
+	                        #slotF := REF("dbArchiveSlotEom".slotEom[5].slot[1]);
+	                        #autoEom := REF("dbArchiveAutoEom".autoEom[5]);
+	                        IF #slotF^.info.data.getOccupied OR #autoEom^.translationPosition <> 38 THEN
+	                            #slot^.delivering := FALSE;
+	                            END_IF;
+	                        END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	
+	CASE #index.pathParent OF
+	    1..6:
+	        CASE #index.acc OF
+	            1..8:
+	                REGION infoTransfer
+	                    #info := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].#slot[#index.acc].info);
+	                    #data := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc].info.data);
+	                    IF #slot^.delivering THEN
+	                        
+	                        IF (#index.pathParent = 3 AND (#index.acc >= 1 AND #index.acc <= 5)) OR
+	                            (#index.pathParent = 4 AND (#index.acc >= 1 AND #index.acc <= 3)) OR
+	                            (#index.pathParent = 6 AND (#index.acc >= 1 AND #index.acc <= 7)) THEN
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc + 1]);
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#index.acc + 1].info.data);
+	                        END_IF;
+	                        
+	                        IF (#index.pathParent = 1 AND #index.acc = 1) OR
+	                            (#index.pathParent = 2 AND #index.acc = 1) OR
+	                            (#index.pathParent = 3 AND #index.acc = 6) OR
+	                            (#index.pathParent = 4 AND #index.acc = 4) OR
+	                            (#index.pathParent = 5 AND #index.acc = 1) THEN
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                            #data := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1].info.data);
+	                        END_IF;
+	                        
+	                        IF #index.pathParent = 6 AND #index.acc = 8 THEN
+	                            #slotF := REF("dbArchiveSlotEom".slotEom[5].slot[1]);
+	                            #data := REF("dbArchiveSlotEom".slotEom[5].slot[1].info.data);
+	                        END_IF;
+	                        
+	                        #info^.setReset := #actual^.generalResetFailure.signal;
+	                        #info^.setAutoRun := #parent^.autoRun.getStsAutoRun;
+	                        #info^.setFailure := FALSE;
+	                        #info^.data.noRunning := NOT #autoConveyor^.standard.forward;
+	                        #info^.setEnable := #parent^.autoRun.getStsAutoRun AND #slot^.delivering;
+	                        
+	                        #slotF := REF("dbArchiveSlotConveyor".slotConveyor[2].slot[2]);
+	                        IF #index.pathParent = 2 AND #slotF^.info.data.getDataReady THEN
+	                            #info^.setEnable := FALSE;
+	                        END_IF;
+	                        #slotF := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[1]);
+	                        IF #index.pathParent = 4 AND
+	                            #index.acc = 4 AND
+	                            #slotF^.info.data.getDataReady AND
+	                            NOT #slotF^.info.data.getOccupied THEN
+	                            #info^.setEnable := FALSE;
+	                        END_IF;
+	                    ELSE
+	                        #info^.setEnable := FALSE;
+	                    END_IF;
+	                    
+	                    "fInfo"(send := #info^.data,
+	                            receive := #data^,
+	                            info := #info^);
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	
+	
+END_FUNCTION
+

@@ -1,0 +1,50 @@
+﻿FUNCTION "oTMain" : Void
+TITLE = oTMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '1500'
+VERSION : 0.8
+//main control tank
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbEquipTank".equipmentTank);
+	#location := 1100;
+	
+	//Call all equipment
+	CASE "dbUtilities".ia OF
+	    2:
+	        FOR #index.acc := 1 TO 5 DO
+	            "fTank"(location := #location,
+	                    index := #index);
+	        END_FOR;
+	    3:
+	        FOR #index.acc := 6 TO 10 DO
+	            "fTank"(location := #location,
+	                    index := #index);
+	        END_FOR;
+	    10:
+	        FOR #index.acc := 11 TO 15 DO
+	            "fTank"(location := #location,
+	                    index := #index);
+	        END_FOR;
+	    11:
+	        FOR #index.acc := 16 TO 20 DO
+	            "fTank"(location := #location,
+	                    index := #index);
+	        END_FOR;
+	    6:
+	        FOR #index.acc := 21 TO 25 DO
+	            "fTank"(location := #location,
+	                    index := #index);
+	        END_FOR;
+	END_CASE;
+END_FUNCTION
+

@@ -1,0 +1,40 @@
+﻿FUNCTION_BLOCK "fbArchiveParRecipes"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR DB_SPECIFIC
+      dataParReceipes { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..4000] of DWord;
+      formatParReceipes { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} AT dataParReceipes : Array[0..50] of "tRecipes";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => "dbParRecipes".ia.qty,
+	             io_Array := "dbParRecipes".parRecipes);
+	"dbParRecipes".firstRunning.setConfig := 0;
+	"dbParRecipes".firstRunning.setDelayUp := 5000;
+	"dbParRecipes".firstRunning.setDelayDown := 0;
+	"dbParRecipes".firstRunning.setSignal := TRUE;
+	"fStatus"("dbParRecipes".firstRunning);
+	IF "dbParRecipes".firstRunning.getStatus THEN
+	    REGION saveData
+	        IF "dbParRecipes".ia.acc >= "dbParRecipes".ia.qty - 1 THEN
+	            "dbParRecipes".ia.acc := 0;
+	        END_IF;
+	        "dbParRecipes".ia.acc += 1;
+	        #formatParReceipes["dbParRecipes".ia.acc] :=
+	        "dbParRecipes".parRecipes["dbParRecipes".ia.acc];
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR "dbParRecipes".ia.acc := 1 TO "dbParRecipes".ia.qty - 1 DO
+	            "dbParRecipes".parRecipes["dbParRecipes".ia.acc] :=
+	            #formatParReceipes["dbParRecipes".ia.acc];
+	        END_FOR;
+	    END_REGION
+	END_IF;
+END_FUNCTION_BLOCK
+

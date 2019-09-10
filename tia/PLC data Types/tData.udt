@@ -1,0 +1,22 @@
+﻿TYPE "tData"
+TITLE = tData
+VERSION : 0.8
+//Data data type structure
+   STRUCT
+      workMem : Array[1..3] of Word;
+      skid : Word;
+      recipe : Word;
+      getFailureDetect : Bool;
+      getOccupied : Bool;
+      getDataReady : Bool;
+      posFlag : Bool;
+      negFlag : Bool;
+      flag : Bool;
+      flagMotion : Bool;
+      timeoutFailure : Bool;
+      noRunning : Bool;
+      dataDelivered : Bool;
+   END_STRUCT;
+
+END_TYPE
+

@@ -1,0 +1,18 @@
+﻿TYPE "tOutputValve"
+TITLE = tOutputCil
+VERSION : 0.8
+//Cil outputs data type structure
+   STRUCT
+      setDelayAdvance : DInt;
+      setDelayOfReturn : DInt;
+      setAdvance : Bool;
+      setReturn : Bool;
+      getAdvance : Bool;
+      getReturn : Bool;
+      setFailureDetected : Bool;
+      timeOfAdvance {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfReturn {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+   END_STRUCT;
+
+END_TYPE
+

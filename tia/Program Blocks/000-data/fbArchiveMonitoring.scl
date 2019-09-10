@@ -1,0 +1,135 @@
+﻿FUNCTION_BLOCK "fbArchiveMonitoring"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR RETAIN
+      structureFailure { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..1024] of Struct
+         generalDisable { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+         soundDisable { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+         group { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+            group1 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority1 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group2 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority2 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group3 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority3 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group4 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority4 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group5 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority5 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group6 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority6 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group7 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority7 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group8 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority8 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group9 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority9 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+            group10 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+            priority10 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+         END_STRUCT;
+         setConfig { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : SInt;
+         setDelay { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      END_STRUCT;
+   END_VAR
+   VAR 
+      i { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ia { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+   END_VAR
+   VAR DB_SPECIFIC
+      dataFailure { ExternalWritable := 'False'} : Array[1..64] of Word;
+      formatFailure { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} AT dataFailure : Array[1..1024] of Bool;
+   END_VAR
+   VAR 
+      knowloge { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..64] of Word;
+      knowlogePulse { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tPulseOnRise";
+   END_VAR
+
+   VAR_TEMP 
+      ib : Int;
+   END_VAR
+
+
+BEGIN
+	
+	"fSizeArray"(size => #ia,
+	             io_Array := "dbMonitoring".failure);
+	"dbMonitoring".firstRunning.setConfig := 0;
+	"dbMonitoring".firstRunning.setDelayUp := 5000;
+	"dbMonitoring".firstRunning.setDelayDown := 0;
+	"dbMonitoring".firstRunning.setSignal := TRUE;
+	"fStatus"("dbMonitoring".firstRunning);
+	IF "dbMonitoring".firstRunning.getStatus THEN
+	    REGION saveData        
+	        FOR #ib := 1 TO 10 DO
+	            IF #i > #ia-1 THEN
+	                #i := 0;
+	            END_IF;
+	            #i += 1;
+	            #formatFailure := "dbMonitoring".monitoringFailure;
+	            #structureFailure[#i].generalDisable := "dbMonitoring".failure[#i].generalDisable;
+	            #structureFailure[#i].soundDisable := "dbMonitoring".failure[#i].soundDisable;
+	            #structureFailure[#i].group.group1 := "dbMonitoring".failure[#i].group.group1;
+	            #structureFailure[#i].group.priority1 := "dbMonitoring".failure[#i].group.priority1;
+	            #structureFailure[#i].group.group2 := "dbMonitoring".failure[#i].group.group2;
+	            #structureFailure[#i].group.priority2 := "dbMonitoring".failure[#i].group.priority2;
+	            #structureFailure[#i].group.group3 := "dbMonitoring".failure[#i].group.group3;
+	            #structureFailure[#i].group.priority3 := "dbMonitoring".failure[#i].group.priority3;
+	            #structureFailure[#i].group.group4 := "dbMonitoring".failure[#i].group.group4;
+	            #structureFailure[#i].group.priority4 := "dbMonitoring".failure[#i].group.priority4;
+	            #structureFailure[#i].group.group5 := "dbMonitoring".failure[#i].group.group5;
+	            #structureFailure[#i].group.priority5 := "dbMonitoring".failure[#i].group.priority5;
+	            #structureFailure[#i].group.group6 := "dbMonitoring".failure[#i].group.group6;
+	            #structureFailure[#i].group.priority6 := "dbMonitoring".failure[#i].group.priority6;
+	            #structureFailure[#i].group.group7 := "dbMonitoring".failure[#i].group.group7;
+	            #structureFailure[#i].group.priority7 := "dbMonitoring".failure[#i].group.priority7;
+	            #structureFailure[#i].group.group8 := "dbMonitoring".failure[#i].group.group8;
+	            #structureFailure[#i].group.priority8 := "dbMonitoring".failure[#i].group.priority8;
+	            #structureFailure[#i].group.group9 := "dbMonitoring".failure[#i].group.group9;
+	            #structureFailure[#i].group.priority9 := "dbMonitoring".failure[#i].group.priority9;
+	            #structureFailure[#i].group.group10 := "dbMonitoring".failure[#i].group.group10;
+	            #structureFailure[#i].group.priority10 := "dbMonitoring".failure[#i].group.priority10;
+	            #structureFailure[#i].setConfig := "dbMonitoring".failure[#i].setConfig;
+	            #structureFailure[#i].setDelay := "dbMonitoring".failure[#i].setDelay;
+	            (*IF "dbData".actual.generalResetFailure.signal THEN
+	                #knowlogePulse.setSignal := TRUE;
+	            ELSE
+	                #knowlogePulse.setSignal := FALSE;
+	            END_IF;
+	            "fPulseOnRise"(#knowlogePulse);
+	            IF #knowlogePulse.getSignal THEN
+	                #knowloge := #dataFailure;
+	            END_IF;*)
+	        END_FOR;
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR #i := 1 TO #ia-1 DO
+	            "dbMonitoring".failure[#i].generalDisable := #structureFailure[#i].generalDisable;
+	            "dbMonitoring".failure[#i].soundDisable := #structureFailure[#i].soundDisable;
+	            "dbMonitoring".failure[#i].group.group1 := #structureFailure[#i].group.group1;
+	            "dbMonitoring".failure[#i].group.priority1 := #structureFailure[#i].group.priority1;
+	            "dbMonitoring".failure[#i].group.group2 := #structureFailure[#i].group.group2;
+	            "dbMonitoring".failure[#i].group.priority2 := #structureFailure[#i].group.priority2;
+	            "dbMonitoring".failure[#i].group.group3 := #structureFailure[#i].group.group3;
+	            "dbMonitoring".failure[#i].group.priority3 := #structureFailure[#i].group.priority3;
+	            "dbMonitoring".failure[#i].group.group4 := #structureFailure[#i].group.group4;
+	            "dbMonitoring".failure[#i].group.priority4 := #structureFailure[#i].group.priority4;
+	            "dbMonitoring".failure[#i].group.group5 := #structureFailure[#i].group.group5;
+	            "dbMonitoring".failure[#i].group.priority5 := #structureFailure[#i].group.priority5;
+	            "dbMonitoring".failure[#i].group.group6 := #structureFailure[#i].group.group6;
+	            "dbMonitoring".failure[#i].group.priority6 := #structureFailure[#i].group.priority6;
+	            "dbMonitoring".failure[#i].group.group7 := #structureFailure[#i].group.group7;
+	            "dbMonitoring".failure[#i].group.priority7 := #structureFailure[#i].group.priority7;
+	            "dbMonitoring".failure[#i].group.group8 := #structureFailure[#i].group.group8;
+	            "dbMonitoring".failure[#i].group.priority8 := #structureFailure[#i].group.priority8;
+	            "dbMonitoring".failure[#i].group.group9 := #structureFailure[#i].group.group9;
+	            "dbMonitoring".failure[#i].group.priority9 := #structureFailure[#i].group.priority9;
+	            "dbMonitoring".failure[#i].group.group10 := #structureFailure[#i].group.group10;
+	            "dbMonitoring".failure[#i].group.priority10 := #structureFailure[#i].group.priority10;
+	            "dbMonitoring".failure[#i].setConfig := #structureFailure[#i].setConfig;
+	            "dbMonitoring".failure[#i].setDelay := #structureFailure[#i].setDelay;
+	        END_FOR;
+	    END_REGION
+	END_IF;
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,118 @@
+﻿FUNCTION "fAutoMan_1" : Void
+TITLE = fAutoMan
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '500'
+VERSION : 0.8
+//Function to choose automatic or manual
+   VAR_IN_OUT 
+      autoMan : "tAutoMan";
+   END_VAR
+
+   VAR CONSTANT 
+      equipment : DInt := 1101;
+      control : DInt := 1;
+   END_VAR
+
+
+BEGIN
+	#autoMan := #autoMan;
+	
+	//set
+	//#eom.autoMan.setDelayOfAuto := (*variableFrom*);
+	//#eom.autoMan.setDelayOfManual := (*variableFrom*);
+	//#eom.autoMan.setPulseSelAutoMan := (*variableFrom*);
+	//#eom.autoMan.setSelAuto := (*variableFrom*);
+	//#eom.autoMan.setSelManual := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #eom.autoMan.getStsAuto;
+	//(*variableFrom*) := #eom.autoMan.getStsManual;
+	
+	//Ladder line 0
+	IF #autoMan.setPulseSelAutoMan THEN
+	    #autoMan.pulseOnRise[0].setSignal := TRUE;
+	ELSE
+	    #autoMan.pulseOnRise[0].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#autoMan.pulseOnRise[0]);
+	
+	IF #autoMan.pulseOnRise[0].getSignal AND (NOT #autoMan.aux[0]) THEN
+	    #autoMan.aux[1] := TRUE;
+	ELSIF #autoMan.pulseOnRise[0].getSignal AND #autoMan.aux[0] THEN
+	    #autoMan.aux[1] := FALSE;
+	END_IF;
+	
+	//Ladder line 1
+	IF #autoMan.setSelAuto THEN
+	    #autoMan.pulseOnRise[1].setSignal := TRUE;
+	ELSE
+	    #autoMan.pulseOnRise[1].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#autoMan.pulseOnRise[1]);
+	
+	IF (#autoMan.setSelAuto) AND (#autoMan.pulseOnRise[1].getSignal) THEN
+	    #autoMan.aux[1] := TRUE;
+	END_IF;
+	
+	//Ladder line 2
+	IF NOT #autoMan.setSelManual THEN
+	    #autoMan.aux[1] := FALSE;
+	END_IF;
+	
+	//Ladder line 3
+	IF #autoMan.aux[1] THEN
+	    #autoMan.aux[0] := TRUE;
+	ELSE
+	    #autoMan.aux[0] := FALSE;
+	END_IF;
+	
+	//Ladder line 4
+	IF #autoMan.aux[0] THEN
+	    #autoMan.cmdAuto := TRUE;
+	ELSE
+	    #autoMan.cmdAuto := FALSE;
+	END_IF;
+	
+	//Ladder line 5
+	IF (NOT #autoMan.aux[0]) THEN
+	    #autoMan.cmdManual := TRUE;
+	ELSE
+	    #autoMan.cmdManual := FALSE;
+	END_IF;
+	
+	//Ladder line 6
+	IF #autoMan.cmdAuto AND (NOT #autoMan.cmdManual) THEN
+	    #autoMan.timerOfAuto(IN := TRUE,
+	                         PT := #autoMan.setDelayOfAuto);
+	ELSE
+	    #autoMan.timerOfAuto(IN := FALSE,
+	                         PT := #autoMan.setDelayOfAuto);
+	END_IF;
+	
+	//Ladder line 7
+	IF #autoMan.timerOfAuto.Q THEN
+	    #autoMan.getStsAuto := TRUE;
+	ELSE
+	    #autoMan.getStsAuto := FALSE;
+	END_IF;
+	
+	//Ladder line 8
+	IF #autoMan.cmdManual AND (NOT #autoMan.cmdAuto) THEN
+	    #autoMan.timerOfMan(IN := TRUE,
+	                        PT := #autoMan.setDelayOfManual);
+	ELSE
+	    #autoMan.timerOfMan(IN := FALSE,
+	                        PT := #autoMan.setDelayOfManual);
+	END_IF;
+	
+	//Ladder line 9
+	IF #autoMan.timerOfMan.Q THEN
+	    #autoMan.getStsManual := TRUE;
+	ELSE
+	    #autoMan.getStsManual := FALSE;
+	END_IF;
+END_FUNCTION
+

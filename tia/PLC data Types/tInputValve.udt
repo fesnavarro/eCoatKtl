@@ -1,0 +1,19 @@
+﻿TYPE "tInputValve"
+TITLE = tInputCil
+VERSION : 0.8
+//Cil inputs data type structure
+   STRUCT
+      getAdvanced : Bool := false;
+      setDelayOfAdvanced : DInt := 0;
+      setDelayOfReturned : DInt := 0;
+      getReturned : Bool := false;
+      setMagneticA1 : Bool := false;
+      setMagneticA2 : Bool := false;
+      setMagneticB1 : Bool := false;
+      setMagneticB2 : Bool := false;
+      timeOfAdvanced {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfReturned {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+   END_STRUCT;
+
+END_TYPE
+

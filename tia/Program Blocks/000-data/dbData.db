@@ -1,0 +1,14 @@
+﻿DATA_BLOCK "dbData"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      action { ExternalWritable := 'False'} : "tAction";
+      actual { ExternalWritable := 'False'} : "tActual";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

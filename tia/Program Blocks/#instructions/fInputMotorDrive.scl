@@ -1,0 +1,121 @@
+﻿FUNCTION "fInputMotorDrive" : Void
+TITLE = fInputInv
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '505'
+VERSION : 0.8
+//Function for inversor inputs
+   VAR_IN_OUT 
+      inputMotorDrive : "tInputMotorDrive";
+   END_VAR
+
+
+BEGIN
+	//set
+	//#inputInv.setFailureDetected := (*variableFrom*);
+	//#inputInv.setDelayActive := (*variableFrom*);
+	//#inputInv.setDelayFailure := (*variableFrom*);
+	//#inputInv.setDelayForward := (*variableFrom*);
+	//#inputInv.setDelayReturn := (*variableFrom*);
+	//#inputInv.setDelayReady := (*variableFrom*);
+	//#inputInv.setActive := (*variableFrom*);
+	//#inputInv.setForwardSignal := (*variableFrom*);
+	//#inputInv.setReturnSignal :=(*variableFrom*) ;
+	//#inputInv.setReady := (*variableFrom*);
+	//#inputInv.setSpeed := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #inputInv.getFailureDetected ;
+	//(*variableFrom*) := #inputInv.getForwardLimit ;
+	//(*variableFrom*) := #inputInv.getReturnLimit ;
+	//(*variableFrom*) := #inputInv.getOff ;
+	//(*variableFrom*) := #inputInv.getOn ;
+	//(*variableFrom*) := #inputInv.getReady ;
+	//(*variableFrom*) := #inputInv.getSpeed ;
+	
+	//Ladder line 0---------
+	IF #inputMotorDrive.setActive THEN
+	    #inputMotorDrive.timeOfActive(IN := TRUE,
+	                           PT := #inputMotorDrive.setDelayActive);
+	ELSE
+	    #inputMotorDrive.timeOfActive(IN := FALSE,
+	                           PT := #inputMotorDrive.setDelayActive);
+	END_IF;
+	
+	IF #inputMotorDrive.timeOfActive.Q THEN
+	    #inputMotorDrive.getOn := TRUE;
+	ELSE
+	    #inputMotorDrive.getOn := FALSE;
+	END_IF;
+	
+	//Ladder line 1---------
+	IF (NOT #inputMotorDrive.setActive) THEN
+	    #inputMotorDrive.getOff := TRUE;
+	ELSE
+	    #inputMotorDrive.getOff := FALSE;
+	END_IF;
+	
+	//Ladder line 2---------
+	IF #inputMotorDrive.setFailureDetected THEN
+	    #inputMotorDrive.timeOfFailure(IN := TRUE,
+	                            PT := #inputMotorDrive.setDelayFailure);
+	ELSE
+	    #inputMotorDrive.timeOfFailure(IN := FALSE,
+	                            PT := #inputMotorDrive.setDelayFailure);
+	END_IF;
+	
+	IF #inputMotorDrive.timeOfFailure.Q THEN
+	    #inputMotorDrive.getFailureDetected := TRUE;
+	ELSE
+	    #inputMotorDrive.getFailureDetected := FALSE;
+	END_IF;
+	
+	//Ladder line 3---------
+	IF #inputMotorDrive.setReady THEN
+	    #inputMotorDrive.timeOfReady(IN := TRUE,
+	                          PT := #inputMotorDrive.setDelayReady);
+	ELSE
+	    #inputMotorDrive.timeOfReady(IN := FALSE,
+	                          PT := #inputMotorDrive.setDelayReady);
+	END_IF;
+	
+	IF #inputMotorDrive.timeOfReady.Q THEN
+	    #inputMotorDrive.getReady := TRUE;
+	ELSE
+	    #inputMotorDrive.getReady := FALSE;
+	END_IF;
+	
+	//Ladder line 4---------
+	#inputMotorDrive.getSpeed := #inputMotorDrive.setSpeed;
+	
+	//Ladder line 5---------
+	IF #inputMotorDrive.setForwardSignal THEN
+	    #inputMotorDrive.timeOfForward(IN := TRUE,
+	                            PT := #inputMotorDrive.setDelayForward);
+	ELSE
+	    #inputMotorDrive.timeOfForward(IN := FALSE,
+	                            PT := #inputMotorDrive.setDelayForward);
+	END_IF;
+	
+	IF #inputMotorDrive.timeOfForward.Q THEN
+	    #inputMotorDrive.getForwardLimit := TRUE;
+	ELSE
+	    #inputMotorDrive.getForwardLimit := FALSE;
+	END_IF;
+	
+	//Ladder line 6---------
+	IF #inputMotorDrive.setReturnSignal THEN
+	    #inputMotorDrive.timeOfReturn(IN := TRUE,
+	                           PT := #inputMotorDrive.setDelayReturn);
+	ELSE
+	    #inputMotorDrive.timeOfReturn(IN := FALSE,
+	                           PT := #inputMotorDrive.setDelayReturn);
+	END_IF;
+	
+	IF #inputMotorDrive.timeOfForward.Q THEN
+	    #inputMotorDrive.getReturnLimit := TRUE;
+	ELSE
+	    #inputMotorDrive.getReturnLimit := FALSE;
+	END_IF;
+END_FUNCTION
+

@@ -1,0 +1,17 @@
+﻿TYPE "tPower"
+TITLE = tSpeed
+VERSION : 0.8
+//Velocity data type structure
+   STRUCT
+      setHigh : Bool;
+      setLow : Bool;
+      setAverage : Bool;
+      setFaliureDetected : Bool;
+      getSpeed : DInt;
+      setSpeedHigh : DInt;
+      setSpeedLow : DInt;
+      setSpeedAverage : DInt;
+   END_STRUCT;
+
+END_TYPE
+

@@ -1,0 +1,89 @@
+﻿FUNCTION "fAutoRun" : Void
+TITLE = fAutoRun
+{ S7_Optimized_Access := 'TRUE' }
+FAMILY : addOnInstructions
+NAME : '501'
+VERSION : 0.8
+//Function to run predetermined system actions
+   VAR_IN_OUT 
+      autoRun : "tAutoRun";
+   END_VAR
+
+
+BEGIN
+	//set
+	//#autoRun.setSelTurnOff := (*variableFrom*);
+	//#autoRun.setSelTurnOn := (*variableFrom*);
+	//#autoRun.setDelayTurnOff := (*variableFrom*);
+	//#autoRun.setDelayTurnOn := (*variableFrom*);
+	//#autoRun.setPulseSelAutoRun := (*variableFrom*);
+	//#autoRun.setStsAuto := (*variableFrom*);
+	//#autoRun.setFailureDetected := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #autoRun.getStsAutoRun ;
+	
+	//Ladder line 0
+	IF #autoRun.setPulseSelAutoRun THEN
+	    #autoRun.pulseOnRise[0].setSignal := TRUE;
+	ELSE
+	    #autoRun.pulseOnRise[0].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#autoRun.pulseOnRise[0]);
+	
+	IF #autoRun.pulseOnRise[0].getSignal AND (NOT #autoRun.aux[0]) THEN
+	    #autoRun.aux[1] := TRUE;
+	ELSIF #autoRun.pulseOnRise[0].getSignal AND #autoRun.aux[0] THEN
+	    #autoRun.aux[1] := FALSE;
+	END_IF;
+	
+	//Ladder line 1
+	IF #autoRun.setSelTurnOn THEN
+	    #autoRun.pulseOnRise[1].setSignal := TRUE;
+	ELSE
+	    #autoRun.pulseOnRise[1].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#autoRun.pulseOnRise[1]);
+	
+	IF #autoRun.pulseOnRise[1].getSignal THEN
+	    #autoRun.aux[1] := TRUE;
+	END_IF;
+	
+	//Ladder line 2
+	IF (#autoRun.setSelTurnOff OR (NOT #autoRun.setStsAuto)) OR
+	    #autoRun.setFailureDetected THEN
+	    #autoRun.aux[1] := FALSE;
+	END_IF;
+	
+	//Ladder line 3
+	IF #autoRun.aux[1] THEN
+	    #autoRun.aux[0] := TRUE;
+	ELSE
+	    #autoRun.aux[0] := FALSE;
+	END_IF;
+	
+	//Ladder line 4
+	IF #autoRun.aux[0] THEN
+	    #autoRun.cmdAutoRun := TRUE;
+	ELSE
+	    #autoRun.cmdAutoRun := FALSE;
+	END_IF;
+	
+	//Ladder line 5
+	IF #autoRun.cmdAutoRun THEN
+	    #autoRun.timeOfAutoRun(IN := TRUE,
+	                           PT := #autoRun.setDelayTurnOn);
+	ELSE
+	    #autoRun.timeOfAutoRun(IN := FALSE,
+	                           PT := #autoRun.setDelayTurnOn);
+	END_IF;
+	
+	//Ladder line 6
+	IF #autoRun.timeOfAutoRun.Q THEN
+	    #autoRun.getStsAutoRun := TRUE;
+	ELSE
+	    #autoRun.getStsAutoRun := FALSE;
+	END_IF;
+END_FUNCTION
+

@@ -1,0 +1,16 @@
+﻿DATA_BLOCK "dbParRecipes"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      parRecipes { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..50] of "tRecipes";
+      index : "tIndex";
+      ia : "tIndex";
+      firstRunning { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

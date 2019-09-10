@@ -1,0 +1,45 @@
+﻿FUNCTION "fPreHeating" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      setDateTimeOn {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+      setDateTimeOff {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+   END_VAR
+
+   VAR_OUTPUT 
+      start : Bool;
+      stop : Bool;
+      getDateTime {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+   END_VAR
+
+   VAR_TEMP 
+      dateTime {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+      feedback : Int;
+   END_VAR
+
+
+BEGIN
+	    #feedback := RD_SYS_T(#dateTime);
+	
+	    IF #dateTime.HOUR - 3 = #setDateTimeOn.HOUR AND
+	        #dateTime.MINUTE = #setDateTimeOn.MINUTE AND
+	        (#dateTime.SECOND > #setDateTimeOn.SECOND AND
+	        #dateTime.SECOND < #setDateTimeOn.SECOND + 30) THEN
+	        #start := TRUE;
+	    END_IF;
+	    
+	    IF #dateTime.HOUR - 3 = #setDateTimeOff.HOUR AND
+	        #dateTime.MINUTE = #setDateTimeOff.MINUTE AND
+	        (#dateTime.SECOND > #setDateTimeOff.SECOND AND
+	        #dateTime.SECOND < #setDateTimeOff.SECOND + 30) THEN
+	        #stop := TRUE;
+	    END_IF;
+	    
+	    #getDateTime.YEAR := #dateTime.YEAR;
+	    #getDateTime.MONTH := #dateTime.MONTH;
+	    #getDateTime.DAY := #dateTime.DAY;
+	    #getDateTime.HOUR := #dateTime.HOUR-3;
+	    #getDateTime.MINUTE := #dateTime.MINUTE;
+	    #getDateTime.SECOND := #dateTime.SECOND;
+END_FUNCTION
+

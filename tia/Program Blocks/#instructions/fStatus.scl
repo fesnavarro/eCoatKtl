@@ -1,0 +1,71 @@
+﻿FUNCTION "fStatus" : Void
+TITLE = fStatus
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : basic
+NAME : '509'
+VERSION : 0.8
+//No return function to configure all entries to generate status
+   VAR_IN_OUT 
+      status : "tStatus";   // User defined object
+   END_VAR
+
+
+BEGIN
+	(*Default parameters of status function*)
+	//#status.setConfig := ;
+	//#status.setSignal := ;
+	//#status.setDelayUp := ;
+	//#status.setDelayDown := ;
+	//#status.setReset := ;
+	(**)
+	//:= #status.getStatus ;
+	
+	//Ladder line 0
+	//excluded
+	
+	//Ladder line 1
+	IF #status.setSignal AND (NOT #status.setConfig.%X2) OR
+	    (NOT #status.setSignal) AND #status.setConfig.%X2 THEN
+	    #status.confirm := TRUE;
+	ELSE
+	    #status.confirm := FALSE;
+	END_IF;
+	
+	//Ladder line 2
+	IF #status.confirm AND (NOT #status.flash) THEN
+	    #status.timeUpDown[0](IN := TRUE,
+	                         PT := #status.setDelayUp);
+	ELSE
+	    #status.timeUpDown[0](IN := FALSE,
+	                         PT := #status.setDelayUp);
+	END_IF;
+	
+	//Ladder line 3
+	IF (NOT #status.confirm) OR #status.flash THEN
+	    #status.timeUpDown[1](IN := TRUE,
+	                         PT := #status.setDelayDown);
+	ELSE
+	    #status.timeUpDown[1](IN := FALSE,
+	                         PT := #status.setDelayDown);
+	END_IF;
+	
+	//Ladder line 4
+	IF #status.timeUpDown[0].Q OR #status.getStatus AND
+	    (NOT #status.timeUpDown[1].Q) THEN
+	    #status.getStatus := TRUE;
+	ELSE
+	    #status.getStatus := FALSE;
+	END_IF;
+	
+	IF #status.setReset THEN
+	    #status.getStatus := FALSE;
+	END_IF;
+	
+	IF #status.getStatus AND #status.setConfig.%X1 THEN
+	    #status.flash := TRUE;
+	ELSE
+	    #status.flash := FALSE;
+	END_IF;
+END_FUNCTION
+

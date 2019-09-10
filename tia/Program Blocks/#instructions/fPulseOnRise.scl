@@ -1,0 +1,34 @@
+﻿FUNCTION "fPulseOnRise" : Void
+TITLE = fPulse
+{ S7_Optimized_Access := 'TRUE' }
+FAMILY : addOnInstructions
+NAME : '507'
+VERSION : 0.8
+//Function that generates pulse
+   VAR_IN_OUT 
+      pulseOnRise : "tPulseOnRise";
+   END_VAR
+
+
+BEGIN
+	(*Default parameters of pulseOnRise function*)
+	//#pulseOnRise.setSignal := ;
+	(**)
+	//:= #pulseOnRise.getSignal ;
+	//  
+	(*Default parameters of pulseOnRise function*) 
+	
+	(*
+	Function to pulse on rise
+	*)
+	IF #pulseOnRise.setSignal AND (NOT #pulseOnRise.memory) THEN
+	    #pulseOnRise.getSignal := TRUE;
+	    #pulseOnRise.memory := TRUE;
+	ELSE
+	    #pulseOnRise.getSignal := FALSE;
+	    IF (NOT #pulseOnRise.setSignal) THEN
+	        #pulseOnRise.memory := FALSE;
+	    END_IF;
+	END_IF;
+END_FUNCTION
+

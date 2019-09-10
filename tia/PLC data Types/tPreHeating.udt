@@ -1,0 +1,11 @@
+﻿TYPE "tPreHeating"
+VERSION : 0.8
+   STRUCT
+      startTime {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+      stopTime {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+      start : Bool;
+      stop : Bool;
+   END_STRUCT;
+
+END_TYPE
+

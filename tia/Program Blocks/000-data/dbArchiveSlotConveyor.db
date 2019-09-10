@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveSlotConveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveSlotConveyor"
+
+BEGIN
+
+END_DATA_BLOCK
+

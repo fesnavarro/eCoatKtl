@@ -1,0 +1,27 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoBoiler"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      autoBoiler { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..1] of "tAutoBoiler";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	(*IF NOT "FirstScan" THEN
+	    REGION saveData
+	        #formatAutoBoiler := #autoBoiler;
+	        "dataBoiler".dataAutoBoiler := #dataAutoBoiler;
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        #dataAutoBoiler := "dataBoiler".dataAutoBoiler;
+	        #autoBoiler := #formatAutoBoiler;
+	    END_REGION
+	END_IF;
+ automatically inserted *)
+END_FUNCTION_BLOCK
+

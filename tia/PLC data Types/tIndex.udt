@@ -1,0 +1,12 @@
+﻿TYPE "tIndex"
+TITLE = tIndex
+VERSION : 0.8
+//Index data type structure
+   STRUCT
+      pathParent : Int;
+      acc : Int;
+      qty : Int;
+   END_STRUCT;
+
+END_TYPE
+

@@ -1,0 +1,13 @@
+﻿DATA_BLOCK "dbInterface"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      interface : Array[0..6] of "tInterface";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

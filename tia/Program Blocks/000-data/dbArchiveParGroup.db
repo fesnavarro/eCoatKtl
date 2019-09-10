@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveParGroup"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveParGroup"
+
+BEGIN
+
+END_DATA_BLOCK
+

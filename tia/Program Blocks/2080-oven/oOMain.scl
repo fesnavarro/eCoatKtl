@@ -1,0 +1,27 @@
+﻿FUNCTION "oOMain" : Void
+TITLE = oSMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : stove
+NAME : '4000'
+VERSION : 0.8
+//main control stove
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipOven".equipmentOven);
+	#location := 2080;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fOven"(location := #location,
+	             index := #index);
+	END_FOR;
+END_FUNCTION
+

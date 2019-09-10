@@ -1,0 +1,22 @@
+﻿FUNCTION "oSMain" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipShipping".equipmentShipping);
+	#location := 600;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fShipping"(index := #index,
+	                location := #location);
+	END_FOR;
+END_FUNCTION
+

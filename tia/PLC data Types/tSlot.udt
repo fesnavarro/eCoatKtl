@@ -1,0 +1,18 @@
+﻿TYPE "tSlot"
+VERSION : 0.8
+   STRUCT
+      releasedTake : Bool;
+      releasedDelivery : Bool;
+      releaseButton : Bool;
+      loaded : Bool;
+      loading : Bool;
+      timeOfTreatment : Int;
+      timeWaiting : Int;
+      "time" : Array[1..2] of "tStatus";
+      info : "tInfoControl";
+      delivering : Bool;
+      auxPulse : "tPulseOnRise";
+   END_STRUCT;
+
+END_TYPE
+

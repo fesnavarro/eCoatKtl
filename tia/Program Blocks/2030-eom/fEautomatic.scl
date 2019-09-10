@@ -1,0 +1,965 @@
+﻿FUNCTION "fEautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parEom : REF_TO "tParameterEom";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      autoEom : REF_TO "tAutoEom";
+      parRecipes : REF_TO "tRecipes";
+      i : Int;
+      tempInt : Int;
+      tempReal : Real;
+      ib : Int;
+      ic : Int;
+      autoConveyor : REF_TO "tAutoConveyor";
+      tempBool : Bool;
+      autoEomF : REF_TO "tAutoEom";
+      autoEomB : REF_TO "tAutoEom";
+      ie : Int;
+      ig : Int;
+      slotShipping : REF_TO "tSlot";
+      slotTank : REF_TO "tSlot";
+      slot : REF_TO "tSlot";
+      slotConveyor : REF_TO "tSlot";
+      data : REF_TO "tData";
+      info : REF_TO "tInfoControl";
+      equipmentTank : REF_TO "tEquipment";
+      tempReal2 : Real;
+      slotTankB : REF_TO "tSlot";
+      tempBoolTest : Bool;
+      skid : REF_TO "tSkid";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parEom := REF("dbArchiveParEom".parEom[#index.pathParent]);
+	#equipment := REF("dbArchiveEquipEom".equipmentEom[#index.pathParent]);
+	#control := REF("dbArchiveControlEom".controlEom[#index.pathParent].control[#index.acc]);
+	#autoEom := REF("dbArchiveAutoEom".autoEom[#index.pathParent]);
+	#data := REF("dbArchiveSlotEom".slotEom[#index.pathParent].slot[1].info.data);
+	
+	#slot := REF("dbArchiveSlotEom".slotEom[#index.pathParent].slot[1]);
+	#skid := REF("dbBuffer".skid[#slot^.info.data.skid]);
+	#parRecipes := REF("dbParRecipes".parRecipes[#skid^.recipe]);
+	
+	#autoEom^.findPosition := FALSE;//forced
+	#info := REF("dbArchiveSlotEom".slotEom[#index.pathParent].slot[1].info);
+	
+	REGION softwareControl
+	    CASE #index.pathParent (*parent*)OF
+	        1..4:////1..4
+	            CASE #index.acc (*control*)OF
+	                1:
+	                    IF #autoEom^.translationPosition > 18.1 THEN
+	                        #autoEom^.translationPosition := 18.1;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.translationPosition < -1 THEN
+	                        #autoEom^.translationPosition := -1;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.goingTranslationPosition > 18 THEN
+	                        #autoEom^.goingTranslationPosition := 18;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.goingTranslationPosition < -1 THEN
+	                        #autoEom^.goingTranslationPosition := -1;
+	                    END_IF;
+	            END_CASE;
+	        5:
+	            CASE #index.acc (*control*)OF
+	                1:
+	                    IF #autoEom^.translationPosition > 39 THEN
+	                        #autoEom^.translationPosition := 39;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.translationPosition < 38 THEN
+	                        #autoEom^.translationPosition := 38;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.goingTranslationPosition > 39 THEN
+	                        #autoEom^.goingTranslationPosition := 39;
+	                    END_IF;
+	                    
+	                    IF #autoEom^.goingTranslationPosition < 38 THEN
+	                        #autoEom^.goingTranslationPosition := 38;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+	REGION elevationPosition
+	    CASE #index.pathParent (*parent*)OF
+	        1..5:////1..5
+	            CASE #index.acc (*control*)OF
+	                2:
+	                    IF #actual^.limitMaximumClimbLift[#index.pathParent].status.getStatus THEN
+	                        #autoEom^.elevationPosition := 1;
+	                    END_IF;
+	                    IF #actual^.slowdownClimbLift[#index.pathParent].signal THEN
+	                        #autoEom^.elevationPosition := 1.1;
+	                    END_IF;
+	                    IF #actual^.slowdownDescentLift[#index.pathParent].signal THEN
+	                        #autoEom^.elevationPosition := 2;
+	                    END_IF;
+	                    IF #actual^.limitMiddleDescentLift[#index.pathParent].signal THEN
+	                        #autoEom^.elevationPosition := 2.1;
+	                    END_IF;
+	                    IF #actual^.limitMinimumDescentLift[#index.pathParent].signal THEN
+	                        #autoEom^.elevationPosition := 3;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+	REGION translationPosition
+	    CASE #index.pathParent (*parent*)OF
+	        1..4://1..4
+	            CASE #index.acc (*control*)OF
+	                1:
+	                    REGION reductionForward
+	                        IF #actual^.slowdownGoTranslation[#index.pathParent].signal THEN
+	                            #autoEom^.pulseOnRise[4].setSignal := TRUE;
+	                        ELSE
+	                            #autoEom^.pulseOnRise[4].setSignal := FALSE;
+	                        END_IF;
+	                        "fPulseOnRise"(#autoEom^.pulseOnRise[4]);
+	                        IF #autoEom^.pulseOnRise[4].getSignal AND
+	                            #control^.command.aux[8] THEN
+	                            #autoEom^.translationPosition := ROUND_REAL(#autoEom^.translationPosition);
+	                            #autoEom^.translationPosition += 0.9;
+	                        END_IF;
+	                    END_REGION
+	                    
+	                    REGION reductionBack
+	                        IF #actual^.slowdownBackTranslation[#index.pathParent].signal THEN
+	                            #autoEom^.pulseOnRise[3].setSignal := TRUE;
+	                        ELSE
+	                            #autoEom^.pulseOnRise[3].setSignal := FALSE;
+	                        END_IF;
+	                        "fPulseOnRise"(#autoEom^.pulseOnRise[3]);
+	                        IF #autoEom^.pulseOnRise[3].getSignal AND
+	                            #control^.command.aux[9] THEN
+	                            IF #autoEom^.translationPosition < 1 THEN
+	                                #autoEom^.translationPosition -= 0.4;
+	                            ELSE
+	                                #autoEom^.translationPosition :=
+	                                ROUND_REAL(#autoEom^.translationPosition);
+	                                #autoEom^.translationPosition -= 0.9;
+	                            END_IF;
+	                        END_IF;
+	                    END_REGION
+	            END_CASE;
+	        5:
+	            CASE #index.acc (*control*)OF
+	                1:
+	                    IF #actual^.minimumSafetyTranslation[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := 38;
+	                    END_IF;
+	                    IF #actual^.maximumSafetyTranslation[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := 39;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+	REGION default parameters
+	    CASE #index.pathParent (*parent*)OF
+	        1:
+	            CASE #index.acc (*control*)OF
+	                1..2:
+	                    #ig := 1;
+	                    #ie := 5;
+	                    #autoEom^.homePosition := 0;
+	                    IF #actual^.maximumSafetyTranslation[#index.pathParent].signal AND
+	                        #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := #autoEom^.homePosition;
+	                        #autoEom^.findPosition := FALSE;
+	                    END_IF;
+	            END_CASE;
+	        2:
+	            CASE #index.acc (*control*)OF
+	                1..2:
+	                    #ig := 4;
+	                    #ie := 10;
+	                    #autoEom^.homePosition := 7;
+	                    IF #actual^.maximumSafetyTranslation[#index.pathParent].signal AND
+	                        #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := #autoEom^.homePosition;
+	                        #autoEom^.findPosition := FALSE;
+	                    END_IF;
+	            END_CASE;
+	        3:
+	            CASE #index.acc (*control*)OF
+	                1..2:
+	                    #ig := 9;
+	                    #ie := 15;
+	                    #autoEom^.homePosition := 12;
+	                    IF #actual^.maximumSafetyTranslation[#index.pathParent].signal AND
+	                        #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := #autoEom^.homePosition;
+	                        #autoEom^.findPosition := FALSE;
+	                    END_IF;
+	            END_CASE;
+	        4:
+	            CASE #index.acc (*control*)OF
+	                1..2:
+	                    #ig := 14;
+	                    #ie := 18;
+	                    #autoEom^.homePosition := 17;
+	                    IF #actual^.maximumSafetyTranslation[#index.pathParent].signal AND
+	                        #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.translationPosition := #autoEom^.homePosition;
+	                        #autoEom^.findPosition := FALSE;
+	                    END_IF;
+	            END_CASE;
+	        5:
+	            CASE #index.acc (*control*)OF
+	                1..2:
+	                    #ig := 38;
+	                    #ie := 39;
+	                    #autoEom^.homePosition := 38;
+	            END_CASE;
+	    END_CASE;
+	    REGION atHome
+	        CASE #index.pathParent (*parent*)OF
+	            1..5:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        IF #autoEom^.homePosition = #autoEom^.translationPosition AND
+	                            #autoEom^.fromPosition = #autoEom^.translationPosition AND
+	                            #autoEom^.toPosition = #autoEom^.translationPosition THEN
+	                            #autoEom^.atHome := TRUE;
+	                            IF #autoEom^.fromPosition = #autoEom^.homePosition AND
+	                                #autoEom^.toPosition = #autoEom^.homePosition THEN
+	                                #autoEom^.mission := 0;
+	                            END_IF;
+	                        ELSE
+	                            #autoEom^.atHome := FALSE;
+	                        END_IF;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	END_REGION
+	CASE #index.pathParent (*parent*)OF
+	    1..5:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION forceAutoOrientation
+	                    (*
+	                    CASE #index.pathParent (*parent*)OF
+	                        1..5:
+	                            CASE #index.acc (*control*)OF
+	                                1:
+	                                    IF #autoEom^.findPosition THEN
+	                                        #autoEom^.position := 20;
+	                                    END_IF;
+	                            END_CASE;
+	                    END_CASE;
+	                    *)
+	                END_REGION
+	                REGION needForward
+	                    IF #autoEom^.translationPosition <
+	                        #autoEom^.goingTranslationPosition AND
+	                        ((#autoEom^.goingTranslationPosition = #autoEom^.fromPosition AND
+	                        NOT #slot^.loaded) OR
+	                        (#autoEom^.goingTranslationPosition = #autoEom^.toPosition AND
+	                        #slot^.loaded)) THEN
+	                        #autoEom^.standard[#index.acc].forward := TRUE;
+	                    ELSE
+	                        #autoEom^.standard[#index.acc].forward := FALSE;
+	                    END_IF;
+	                    #setAutoForward := (#autoEom^.mission <> 0 AND #autoEom^.standard[#index.acc].forward);
+	                    
+	                    IF NOT #slot^."time"[1].getStatus AND
+	                        #slot^.loaded THEN
+	                        #setAutoForward := FALSE;
+	                    END_IF;
+	
+	                END_REGION
+	                REGION needReturn
+	                    IF ((#autoEom^.translationPosition >
+	                        #autoEom^.goingTranslationPosition) AND
+	                        ((#autoEom^.goingTranslationPosition = #autoEom^.fromPosition AND
+	                        NOT #slot^.loaded) OR
+	                        (#autoEom^.goingTranslationPosition = #autoEom^.toPosition AND
+	                        #slot^.loaded))) OR
+	                        #autoEom^.findPosition THEN
+	                        #autoEom^.standard[#index.acc]."return" := TRUE;
+	                    ELSE
+	                        #autoEom^.standard[#index.acc]."return" := FALSE;
+	                    END_IF;
+	                    #setAutoReturn := (#autoEom^.mission <> 0 AND #autoEom^.standard[#index.acc]."return");
+	                END_REGION
+	                REGION arrived
+	                    IF #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.standard[1].pulseOnRise.setSignal := TRUE;
+	                    ELSE
+	                        #autoEom^.standard[1].pulseOnRise.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#autoEom^.standard[1].pulseOnRise);
+	                END_REGION
+	                REGION departed
+	                    IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                        #autoEom^.standard[2].pulseOnRise.setSignal := TRUE;
+	                    ELSE
+	                        #autoEom^.standard[2].pulseOnRise.setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#autoEom^.standard[2].pulseOnRise);
+	                END_REGION
+	                REGION confirmDepartedForward
+	                    IF #autoEom^.standard[2].pulseOnRise.getSignal AND
+	                        #control^.command.aux[8] THEN
+	                        #autoEom^.translationPosition := REAL_TO_INT(#autoEom^.translationPosition);
+	                        #autoEom^.translationPosition += 0.1;
+	                    END_IF;
+	                END_REGION
+	                REGION confirmDepartedBackward
+	                    IF #autoEom^.standard[2].pulseOnRise.getSignal AND
+	                        #control^.command.aux[9] THEN
+	                        #autoEom^.translationPosition := REAL_TO_INT(#autoEom^.translationPosition);
+	                        #autoEom^.translationPosition -= 0.1;
+	                    END_IF;
+	                END_REGION
+	                REGION confirmArrivedForward
+	                    IF #autoEom^.standard[1].pulseOnRise.getSignal AND
+	                        #control^.command.aux[8] THEN
+	                        #autoEom^.translationPosition := REAL_TO_INT(#autoEom^.translationPosition);
+	                    END_IF;
+	                END_REGION
+	                REGION confirmArrivedReturn
+	                    IF #autoEom^.standard[1].pulseOnRise.getSignal AND
+	                        #control^.command.aux[9] THEN
+	                        IF #autoEom^.translationPosition >= 0 THEN
+	                            #autoEom^.translationPosition := REAL_TO_INT(#autoEom^.translationPosition);
+	                        ELSE
+	                            #autoEom^.translationPosition := -1;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION waitFastMode
+	                    #autoEom^.standard[#index.acc].averagePower := FALSE;
+	                    #autoEom^.status[4].setConfig := 0;
+	                    #autoEom^.status[4].setDelayUp := 2000;
+	                    #autoEom^.status[4].setDelayDown := 0;
+	                    #autoEom^.status[4].setSignal :=
+	                    #setAutoForward OR #setAutoReturn;
+	                    "fStatus"(#autoEom^.status[4]);
+	                    #autoEom^.standard[#index.acc].averagePower :=
+	                    #autoEom^.status[4].getStatus;
+	                END_REGION
+	                REGION going
+	                    IF NOT #slot^.loaded AND
+	                        #autoEom^.fromPosition <> #autoEom^.translationPosition THEN //toFrom
+	                        IF #autoEom^.mission <> 1000 AND
+	                            #autoEom^.fromPosition >= 1 AND
+	                            #autoEom^.fromPosition <= 17 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.fromPosition)].slot[1]);
+	                            IF #slotTank^.loaded THEN
+	                                #autoEom^.goingTranslationPosition := #autoEom^.fromPosition;
+	                            END_IF;
+	                        ELSE
+	                            #autoEom^.goingTranslationPosition := #autoEom^.fromPosition;
+	                        END_IF;
+	                    END_IF;
+	                    IF #slot^.loaded AND
+	                        #autoEom^.toPosition <> #autoEom^.translationPosition THEN //toGo
+	                        IF #autoEom^.toPosition >= 1 AND
+	                            #autoEom^.toPosition <= 17 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.toPosition)].slot[1]);
+	                            IF NOT #slotTank^.loaded THEN
+	                                #autoEom^.goingTranslationPosition := #autoEom^.toPosition;
+	                            END_IF;
+	                        ELSE
+	                            #autoEom^.goingTranslationPosition := #autoEom^.toPosition;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION goHome
+	                    IF #slot^.releasedDelivery AND
+	                        NOT #autoEom^.atHome AND
+	                        #autoEom^.stoppedTime.getStatus AND
+	                        (NOT #slot^.loaded OR
+	                        NOT #slot^.loading) THEN
+	                        #autoEom^.fromPosition := #autoEom^.homePosition;
+	                        #autoEom^.toPosition := #autoEom^.homePosition;
+	                        #autoEom^.mission := 1000;
+	                    END_IF;
+	                END_REGION
+	            2:
+	                REGION wait
+	                    #autoEom^.standard[#index.acc].status[2].setConfig := 0;
+	                    #autoEom^.standard[#index.acc].status[2].setDelayUp := 3000;
+	                    #autoEom^.standard[#index.acc].status[2].setDelayDown := 0;
+	                    #autoEom^.standard[#index.acc].status[2].setSignal :=
+	                    (#actual^.limitMaximumClimbLift[#index.pathParent].signal OR
+	                    #actual^.limitMinimumDescentLift[#index.pathParent].signal OR
+	                    #actual^.limitMiddleDescentLift[#index.pathParent].signal) AND
+	                    #actual^.positionStopTranslationTank[#index.pathParent].signal;
+	                    "fStatus"(#autoEom^.standard[#index.acc].status[2]);
+	                END_REGION
+	                REGION needUp
+	                    IF #autoEom^.elevationPosition >
+	                        #autoEom^.goingElevationPosition THEN
+	                        #autoEom^.standard[#index.acc]."return" := TRUE;
+	                        IF #info^.data.getDataReady OR
+	                            #autoEom^.translationPosition >= 39 THEN
+	                            #setAutoReturn := TRUE;
+	                        END_IF;
+	                    ELSE
+	                            #autoEom^.standard[#index.acc]."return" := FALSE;
+	                        END_IF;
+	                END_REGION
+	                REGION needDown
+	                    IF #autoEom^.elevationPosition <
+	                        #autoEom^.goingElevationPosition THEN
+	                        #autoEom^.standard[#index.acc].forward := TRUE;
+	                        IF NOT #info^.data.getOccupied THEN
+	                            #setAutoForward := TRUE;
+	                        END_IF;
+	                    ELSE
+	                        #autoEom^.standard[#index.acc].forward := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION waitFastMode
+	                    #autoEom^.standard[#index.acc].averagePower := FALSE;
+	                    #autoEom^.status[2].setConfig := 0;
+	                    #autoEom^.status[2].setDelayUp := 8000;
+	                    #autoEom^.status[2].setDelayDown := 0;
+	                    #autoEom^.status[2].setSignal :=
+	                    #setAutoReturn ;
+	                    "fStatus"(#autoEom^.status[2]);
+	                    #autoEom^.standard[#index.acc].averagePower :=
+	                    #autoEom^.status[2].getStatus OR #setAutoForward;
+	                END_REGION
+	                REGION endMission
+	                    IF NOT #slot^.loaded AND
+	                        (#autoEom^.fromPosition <> #autoEom^.translationPosition OR
+	                        #autoEom^.mission = 1000) AND
+	                        #autoEom^.toPosition = #autoEom^.translationPosition AND
+	                        #control^.command.getTurnOnForward THEN //finish
+	                        #autoEom^.mission := 0;
+	                        END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	
+	CASE #index.pathParent (*parent*)OF
+	    1://
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION mission
+	                    IF #slot^.releasedDelivery THEN
+	                        #slotShipping := REF("dbArchiveSlotShipping".slotShipping[1].slot[1]);
+	                        #parRecipes := REF("dbParRecipes".parRecipes[#slotShipping^.info.data.recipe]);
+	                        #slotTank := REF("dbArchiveSlotTank".SlotTank[1].slot[1]);
+	                        #slotTankB := REF("dbArchiveSlotTank".SlotTank[2].slot[1]);
+	                        IF #slotShipping^.releasedTake AND
+	                            #autoEom^.translationPosition = 0 AND
+	                            #slotTank^.releasedDelivery THEN
+	                            FOR #ib := 1 TO #ie DO
+	                                IF #parRecipes^.enable[#ib] THEN //to
+	                                    #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                                    #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#ib)].slot[1]);
+	                                    IF #slotTank^.releasedDelivery AND
+	                                        #autoEomF^.translationPosition > #ib + 1 AND
+	                                        #autoEomF^.goingTranslationPosition > #ib + 1 AND
+	                                        #autoEomF^.fromPosition > #ib + 1 AND
+	                                        #autoEomF^.toPosition > #ib + 1 THEN //aproved
+	                                        #autoEom^.fromPosition := -1;
+	                                        #autoEom^.toPosition := #ib;
+	                                        #autoEom^.mission := #ib;
+	                                        GOTO applied1;
+	                                    ELSE
+	                                        EXIT;
+	                                    END_IF;
+	                                END_IF;
+	                            END_FOR;
+	                        END_IF;
+	                        FOR #ic := #ig TO #ie - 1 DO
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ic].#slot[1]);
+	                            #parRecipes := REF("dbParRecipes".parRecipes[#slotTank^.info.data.recipe]);
+	                            IF #slotTank^.releasedTake THEN //from
+	                                FOR #ib := #ic + 1 TO #ie DO
+	                                    IF #parRecipes^.enable[#ib] THEN //to
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].#slot[1]);
+	                                        #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                                        IF #slotTank^.releasedDelivery AND
+	                                            #autoEomF^.translationPosition > #ic + 1 AND
+	                                            #autoEomF^.goingTranslationPosition > #ic + 1 AND
+	                                            #autoEomF^.fromPosition > #ic + 1 AND
+	                                            #autoEomF^.toPosition > #ic + 1 THEN
+	                                            #autoEom^.fromPosition := #ic;
+	                                            #autoEom^.toPosition := #ib;
+	                                            #autoEom^.mission := #ic + #ib;
+	                                            GOTO applied1;
+	                                        ELSE
+	                                            GOTO busy1;
+	                                        END_IF;
+	                                    ELSE
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                        IF #slotTank^.loaded OR #slotTank^.loading THEN
+	                                            GOTO busy1;
+	                                        END_IF;
+	                                    END_IF;
+	                                END_FOR;
+	                            END_IF;
+	                        busy1:
+	                            ;
+	                        END_FOR;
+	                    END_IF;
+	                applied1:;
+	                END_REGION
+	            2:
+	                REGION taking
+	                    IF #autoEom^.mission <> 0 AND
+	                        #autoEom^.mission <> 1000 AND
+	                        NOT #slot^.loaded AND
+	                        NOT #slot^.loading AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition <> #autoEom^.toPosition THEN
+	                        IF #autoEom^.translationPosition = -1 THEN
+	                            #slotShipping := REF("dbArchiveSlotShipping".slotShipping[1].slot[1]);
+	                            IF #slotShipping^.releasedTake AND
+	                                #slotShipping^.loaded THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                        IF #autoEom^.translationPosition >= #ig AND
+	                            #autoEom^.translationPosition <= #ie - 1 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                            IF #slotTank^.releasedTake AND
+	                                (#autoEom^.translationPosition = #autoEom^.fromPosition) THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION delivering
+	                    IF #autoEom^.translationPosition >= #ig THEN
+	                        #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                        IF #slotTank^.releasedDelivery AND
+	                            #slot^.releasedTake AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 2.1;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION shippingEntrance
+	                    REGION downToEntrance
+	                        #slotShipping := REF("dbArchiveSlotShipping".slotShipping[1].slot[1]);
+	                        IF #autoEom^.translationPosition = 0 AND
+	                            #autoEom^.standard[#index.acc].status[2].getStatus AND
+	                            NOT #slot^.loaded AND
+	                            #slotShipping^.releasedTake AND
+	                            #autoEom^.fromPosition = -1 THEN
+	                            #autoEom^.goingElevationPosition := 3;
+	                        END_IF;
+	                    END_REGION
+	                END_REGION
+	        END_CASE;
+	    2://
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION mission
+	                    IF #slot^.releasedDelivery THEN
+	                        FOR #ic := #ig TO #ie - 1 DO
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ic].slot[1]);
+	                            #parRecipes := REF("dbParRecipes".parRecipes[#slotTank^.info.data.recipe]);
+	                            #autoEomB := REF("dbArchiveAutoEom".autoEom[#index.pathParent - 1]);
+	                            #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                            IF #slotTank^.releasedTake AND
+	                                #autoEomB^.translationPosition < #ic - 1 AND
+	                                #autoEomB^.goingTranslationPosition < #ic - 1 AND
+	                                #autoEomB^.fromPosition < #ic - 1 AND
+	                                #autoEomB^.toPosition < #ic - 1 AND
+	                                #autoEomF^.translationPosition > #ic + 1 AND
+	                                #autoEomF^.goingTranslationPosition > #ic + 1 AND
+	                                #autoEomF^.fromPosition > #ic + 1 AND
+	                                #autoEomF^.toPosition > #ic + 1 THEN //from
+	                                FOR #ib := #ic + 1 TO #ie DO
+	                                    IF #parRecipes^.enable[#ib] THEN //to
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                        #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                                        IF #slotTank^.releasedDelivery AND
+	                                            #autoEomF^.translationPosition > #ib + 1 AND
+	                                            #autoEomF^.goingTranslationPosition > #ib + 1 AND
+	                                            #autoEomF^.fromPosition > #ib + 1 AND
+	                                            #autoEomF^.toPosition > #ib + 1 THEN
+	                                            #autoEom^.fromPosition := #ic;
+	                                            #autoEom^.toPosition := #ib;
+	                                            #autoEom^.mission := #ic + #ib;
+	                                            GOTO applied2;
+	                                        ELSE
+	                                            GOTO busy2;
+	                                        END_IF;
+	                                    ELSE
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                        IF #slotTank^.loaded OR #slotTank^.loading THEN
+	                                            GOTO busy2;
+	                                        END_IF;
+	                                    END_IF;
+	                                END_FOR;
+	                            END_IF;
+	                        busy2:
+	                            ;
+	                        END_FOR;
+	                    END_IF;
+	                applied2:
+	                    ;
+	                END_REGION
+	            2:
+	                REGION taking
+	                    IF #autoEom^.mission <> 0 AND
+	                        #autoEom^.mission <> 1000 AND
+	                        NOT #slot^.loaded AND
+	                        NOT #slot^.loading AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition <> #autoEom^.toPosition THEN
+	                        IF #autoEom^.translationPosition >= #ig AND
+	                            #autoEom^.translationPosition <= #ie - 1 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                            IF #slotTank^.releasedTake THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION delivering
+	                    IF #autoEom^.translationPosition >= #ig + 1 THEN
+	                        #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                        IF #slotTank^.releasedDelivery AND
+	                            #slot^.releasedTake AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 3;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    3://
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION mission
+	                    IF #slot^.releasedDelivery  THEN
+	                        FOR #ic := #ig TO #ie-1 DO
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ic].slot[1]);
+	                            #parRecipes := REF("dbParRecipes".parRecipes[#slotTank^.info.data.recipe]);
+	                            #autoEomB := REF("dbArchiveAutoEom".autoEom[#index.pathParent - 1]);
+	                            #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                            IF #slotTank^.releasedTake AND
+	                                #autoEomB^.translationPosition < #ic - 1 AND
+	                                #autoEomB^.goingTranslationPosition < #ic - 1 AND
+	                                #autoEomB^.fromPosition < #ic - 1 AND
+	                                #autoEomB^.toPosition < #ic - 1 AND
+	                                #autoEomF^.translationPosition > #ic + 1 AND
+	                                #autoEomF^.goingTranslationPosition > #ic + 1 AND
+	                                #autoEomF^.fromPosition > #ic + 1 AND
+	                                #autoEomF^.toPosition > #ic + 1 THEN //from
+	                                FOR #ib := #ic + 1 TO #ie DO
+	                                    IF #parRecipes^.enable[#ib] THEN //to
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                        #autoEomF := REF("dbArchiveAutoEom".autoEom[#index.pathParent + 1]);
+	                                        IF #slotTank^.releasedDelivery AND
+	                                            #autoEomF^.translationPosition > #ib+1 AND
+	                                            #autoEomF^.goingTranslationPosition > #ib+1 AND
+	                                            #autoEomF^.fromPosition > #ib+1 AND
+	                                            #autoEomF^.toPosition > #ib+1 THEN
+	                                            #autoEom^.fromPosition := #ic;
+	                                            #autoEom^.toPosition := #ib;
+	                                            #autoEom^.mission := #ic + #ib;
+	                                            GOTO applied3;
+	                                        ELSE
+	                                            GOTO busy3;
+	                                        END_IF;
+	                                    ELSE
+	                                        #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                        IF #slotTank^.loaded OR #slotTank^.loading THEN
+	                                            GOTO busy3;
+	                                        END_IF;
+	                                    END_IF;
+	                                END_FOR;
+	                            END_IF;
+	                        busy3:
+	                            ;
+	                        END_FOR;
+	                    END_IF;
+	                applied3:
+	                    ;
+	                END_REGION
+	            2:
+	                REGION taking
+	                    IF #autoEom^.mission <> 0 AND
+	                        #autoEom^.mission <> 1000 AND
+	                        NOT #slot^.loaded AND
+	                        NOT #slot^.loading AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition <> #autoEom^.toPosition THEN
+	                        IF #autoEom^.translationPosition >= #ig AND
+	                            #autoEom^.translationPosition <= #ie-1 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                            IF #slotTank^.releasedTake THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION delivering
+	                    IF #autoEom^.translationPosition >= #ig+1 THEN
+	                        #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                        IF #slotTank^.releasedDelivery AND
+	                            #slot^.releasedTake AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 3;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    4://
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION mission
+	                    IF #slot^.releasedDelivery AND #autoEom^.translationPosition <= 17 THEN
+	                        FOR #ic := #ig TO #ie-1 DO
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ic].slot[1]);
+	                            #parRecipes := REF("dbParRecipes".parRecipes[#slotTank^.info.data.recipe]);
+	                            #autoEomB := REF("dbArchiveAutoEom".autoEom[#index.pathParent - 1]);
+	                            IF #slotTank^.releasedTake AND
+	                                #autoEomB^.translationPosition < #ic-1 AND
+	                                #autoEomB^.goingTranslationPosition < #ic-1 AND
+	                                #autoEomB^.fromPosition < #ic-1 AND
+	                                #autoEomB^.toPosition < #ic-1 THEN //from
+	                                FOR #ib := #ic + 1 TO #ie DO
+	                                    IF #parRecipes^.enable[#ib] OR #ib=18 THEN //to
+	                                        IF #ib <= 17 THEN
+	                                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                            IF #slotTank^.releasedDelivery THEN
+	                                                #autoEom^.fromPosition := #ic;
+	                                                #autoEom^.toPosition := #ib;
+	                                                #autoEom^.mission := #ic + #ib;
+	                                                GOTO applied4;
+	                                            ELSE
+	                                                GOTO busy4;
+	                                            END_IF;
+	                                        END_IF;
+	                                        IF #ib = #ie THEN
+	                                            #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[1].slot[1]);
+	                                            IF #slotConveyor^.releasedDelivery THEN
+	                                                #autoEom^.fromPosition := #ic;
+	                                                #autoEom^.toPosition := #ib;
+	                                                #autoEom^.mission := #ic + #ib;
+	                                                GOTO applied4;
+	                                            ELSE
+	                                                GOTO busy4;
+	                                            END_IF;
+	                                        END_IF;
+	                                    ELSE
+	                                        IF #ib <= 17 THEN
+	                                            #slotTank := REF("dbArchiveSlotTank".SlotTank[#ib].slot[1]);
+	                                            IF #slotTank^.loaded OR #slotTank^.loading THEN
+	                                                GOTO busy4;
+	                                            END_IF;
+	                                        END_IF;
+	                                    END_IF;
+	                                END_FOR;
+	                            END_IF;
+	                        busy4:
+	                            ;
+	                        END_FOR;
+	                    END_IF;
+	                applied4:
+	                    ;
+	                END_REGION
+	            2:
+	                REGION taking
+	                    IF #autoEom^.mission <> 0 AND
+	                        #autoEom^.mission <> 1000 AND
+	                        NOT #slot^.loaded AND
+	                        NOT #slot^.loading AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition <> #autoEom^.toPosition THEN
+	                        IF #autoEom^.translationPosition >= #ig AND
+	                            #autoEom^.translationPosition <= #ie - 1 THEN
+	                            #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                            IF #slotTank^.releasedTake THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION delivering
+	                    IF #autoEom^.translationPosition >= #ig+1 AND
+	                        #autoEom^.translationPosition <= #ie-1 THEN
+	                        #slotTank := REF("dbArchiveSlotTank".SlotTank[REAL_TO_INT(#autoEom^.translationPosition)].slot[1]);
+	                        IF #slotTank^.releasedDelivery AND
+	                            #slot^.releasedTake AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 3;
+	                        END_IF;
+	                    END_IF;
+	                    IF #autoEom^.translationPosition >= #ie THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[1].slot[1]);
+	                        IF #slotConveyor^.releasedDelivery AND
+	                            #slot^.releasedTake AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 2.1;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION downInHome
+	                    IF #autoEom^.atHome AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition = #autoEom^.toPosition AND
+	                        #autoEom^.elevationPosition = 2.1 THEN
+	                        #autoEom^.goingElevationPosition := 3;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    5://
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION mission
+	                    IF #slot^.info.data.getDataReady AND
+	                        NOT #slot^.info.data.getOccupied THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[8]);
+	                        IF NOT #slotConveyor^.info.data.getDataReady THEN //from
+	                            #slotShipping := REF("dbArchiveSlotShipping".slotShipping[2].slot[1]);
+	                            IF #slotShipping^.releasedDelivery THEN
+	                                #autoEom^.fromPosition := 38;
+	                                #autoEom^.toPosition := 39;
+	                                #autoEom^.mission := 38 + 39;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	            2:
+	                REGION taking
+	                    IF #autoEom^.mission <> 0 AND
+	                        #autoEom^.mission <> 1000 AND
+	                        NOT #slot^.loaded AND
+	                         #slot^.loading AND
+	                        #autoEom^.translationPosition = #autoEom^.fromPosition AND
+	                        #autoEom^.translationPosition <> #autoEom^.toPosition THEN
+	                        IF #autoEom^.translationPosition = #ig THEN
+	                            #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[8]);
+	                            IF NOT #slotConveyor^.info.data.getDataReady THEN
+	                                #autoEom^.goingElevationPosition := 1;
+	                            END_IF;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	                REGION upToHome
+	                    IF NOT #autoEom^.atHome AND
+	                        #autoEom^.mission = 1000 AND
+	                        #autoEom^.translationPosition = 39 AND
+	                        #autoEom^.elevationPosition = 3 THEN
+	                        #autoEom^.goingElevationPosition := 2.1;
+	                    END_IF;
+	                END_REGION
+	                REGION delivering
+	                    IF #autoEom^.translationPosition = #ie THEN
+	                        #slotShipping := REF("dbArchiveSlotShipping".slotShipping[2].slot[1]);
+	                        IF #slotShipping^.releasedDelivery AND
+	                            (#autoEom^.translationPosition = #autoEom^.toPosition) THEN
+	                            #autoEom^.goingElevationPosition := 3;
+	                        END_IF;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	REGION hmiPosition
+	    CASE #index.pathParent (*parent*)OF
+	        1..5://
+	            CASE #index.acc (*control*)OF
+	                1:
+	                    #equipment^.id := REAL_TO_INT(#autoEom^.translationPosition);
+	                    IF #equipment^.id < 0 THEN
+	                        #equipment^.id := 0;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	    
+	END_REGION
+	REGION countIdleTime
+	    CASE #index.pathParent (*parent*)OF
+	        1..4://
+	            CASE #index.acc (*control*)OF
+	                1..2://
+	                    #autoEom^.stoppedTime.setDelayUp := 600000;
+	            END_CASE;
+	        5://
+	            CASE #index.acc (*control*)OF
+	                1..2://
+	                    #autoEom^.stoppedTime.setDelayUp := 5000;
+	            END_CASE;
+	    END_CASE;
+	    CASE #index.pathParent (*parent*)OF
+	        1..5://
+	            CASE #index.acc (*control*)OF
+	                1..2://
+	                    #autoEom^.stoppedTime.setConfig := 0;
+	                    IF #autoEom^.translationPosition = 4 OR
+	                        #autoEom^.translationPosition = 5 OR
+	                        #autoEom^.translationPosition = 9 OR
+	                        #autoEom^.translationPosition = 10 OR
+	                        #autoEom^.translationPosition = 14 OR
+	                        #autoEom^.translationPosition = 15 OR
+	                        #autoEom^.translationPosition = 18 OR
+	                        #autoEom^.translationPosition = 39 THEN
+	                        #autoEom^.stoppedTime.setDelayUp := 50;
+	                    END_IF;
+	                    #slotShipping := REF("dbArchiveSlotShipping".slotShipping[1].slot[1]);
+	                    IF #index.pathParent = 1 AND
+	                        #slotShipping^.releasedTake THEN
+	                        #autoEom^.stoppedTime.setDelayUp := 50;
+	                    END_IF;
+	                    #autoEom^.stoppedTime.setDelayDown := 0;
+	                    #autoEom^.stoppedTime.setSignal :=
+	                    NOT #autoEom^.atHome AND #autoEom^.mission = 0 AND
+	                    #slot^.releasedDelivery;
+	                    "fStatus"(#autoEom^.stoppedTime);
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+	REGION clearAll
+	    CASE #index.pathParent (*parent*)OF
+	        1..5://
+	            CASE #index.acc (*control*)OF
+	                1..2://
+	                    IF NOT #autoRunEnable THEN
+	                        #autoEom^.standard[#index.acc].up := FALSE;
+	                        #autoEom^.standard[#index.acc].down := FALSE;
+	                        #autoEom^.standard[#index.acc].forward := FALSE;
+	                        #autoEom^.standard[#index.acc]."return" := FALSE;
+	                        #autoEom^.standard[#index.acc].highPower := FALSE;
+	                        #autoEom^.standard[#index.acc].averagePower := FALSE;
+	                        #autoEom^.standard[#index.acc].lowPower := FALSE;
+	                        REGION wait
+	                            #autoEom^.status[1].setSignal := FALSE;
+	                            "fStatus"(#autoEom^.status[1]);
+	                        END_REGION
+	                        REGION waitFastMode
+	                            #autoEom^.status[2].setSignal := FALSE;
+	                            "fStatus"(#autoEom^.status[2]);
+	                        END_REGION
+	                        REGION IdleTime
+	                            #autoEom^.stoppedTime.setSignal := FALSE;
+	                            "fStatus"(#autoEom^.stoppedTime);
+	                        END_REGION
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+END_FUNCTION
+

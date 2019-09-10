@@ -1,0 +1,15 @@
+﻿DATA_BLOCK "dbParExhaust"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      parExhaust { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of "tParameterExhaust";
+      ia { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tIndex";
+      firstRunning { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

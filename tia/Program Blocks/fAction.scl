@@ -1,0 +1,539 @@
+﻿FUNCTION "fAction" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      tempBool : Bool;
+      tempInt : Int;
+      termochiller : "tScale";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	REGION disable
+	    (*
+	#action^.RecirculationPump[0].i += 1;
+	"-48KA2:A1" := #action^.recirculationPump[#action^.RecirculationPump[0].i].signal;//LIGA BOMBA TANQUE DE LAVAÇÃO U.F (nao existe mais CARLOS)
+	
+	#action^.RecirculationPump[0].i += 1; (colocar na tela para continuar transferencia final em manual do KTL) desligando a bomba eletrica
+	"-47KA2:A1" := #action^.recirculationPump[#action^.RecirculationPump[0].i].signal;//LIGA BOMBA PNEUMÁT. TRANSFERÊNCIA TANQUE RESERVA KTL (V02/KTL-E01/) **EXEMPLO a bomba 3 do KTL
+	*)
+	END_REGION
+	REGION termochiller
+	    #termochiller.setInputMax := 500.0;
+	    #termochiller.setInputMin := 0.0;
+	    #termochiller.setScaleMax := 28200;
+	    #termochiller.setScaleMin := 550;
+	    #termochiller.setSignal := #actual^.temperatureTank[14].signal;
+	    "fScale"(#termochiller);
+	    "=ecoat-feedbackToChiller" := REAL_TO_INT(#termochiller.getResult);
+	END_REGION
+	REGION reset acc
+	    #action^.resetFailureEom[0].i := 0;
+	    #action^.speed1Eom[0].i := 0;
+	    #action^.speed2Eom[0].i := 0;
+	    #action^.safetyActionEom[0].i := 0;
+	    #action^.setParameterEom[0].i := 0;
+	    #action^.upAndForwardEom[0].i := 0;
+	    #action^.downAndReturnEom[0].i := 0;
+	    #action^.ambar[0].i := 0;
+	    #action^.green[0].i := 0;
+	    #action^.sound[0].i := 0;
+	    #action^.red[0].i := 0;
+	    #action^.recirculationPumpTank[0].i := 0;
+	    #action^.electronicPowerOnOven[0].i := 0;
+	    #action^.openValveReplenishment[0].i := 0;
+	    #action^.funOnOven[0].i := 0;
+	    #action^.closeValveReplenishment[0].i := 0;
+	    #action^.powerRangeControl[0].i := 0;
+	    #action^.triggersFirstStageOven[0].i := 0;
+	    #action^.triggersSecondStageOven[0].i := 0;
+	    #action^.triggersFirstStageBoiler[0].i := 0;
+	    #action^.triggersSecondStageBoiler[0].i := 0;
+	    #action^.enableHeatGeneratorOven[0].i := 0;
+	    #action^.onOffRectifier[0].i := 0;
+	    #action^.onOffTermochiller[0].i := 0;
+	    #action^.enableThyristorTank[0].i := 0;
+	    #action^.liftingTableAdvance[0].i := 0;
+	    #action^.liftingTableReturn[0].i := 0;
+	    #action^.openValveHeatExchanger[0].i := 0;
+	    #action^.closeValveHeatExchanger[0].i := 0;
+	    #action^.sprayWash[0].i := 0;
+	    #action^.funOnBoiler[0].i := 0;
+	    #action^.funOnExhaust[0].i := 0;
+	    #action^.openMeteringPumpA[0].i := 0;
+	    #action^.openMeteringPumpB[0].i := 0;
+	    #action^.electronicPowerOnBoiler[0].i := 0;
+	    #action^.enableHeatGeneratorBoiler[0].i := 0;
+	    #action^.recirculationPumpBoiler[0].i := 0;
+	    #action^.transferPumpTank[0].i := 0;
+	    #action^.oilSeparatorPump[0].i := 0;
+	    #action^.resetControlExhaust[0].i := 0;
+	    #action^.resetControlTank[0].i := 0;
+	    #action^.sprayPump[0].i := 0;
+	END_REGION
+	REGION ambar
+	    #action^.ambar[0].i += 1;
+	    "=pre-79H1:2" := #action^.ambar[#action^.ambar[0].i].signal;//ALARME VISUAL LINHA OPERANDO
+	    #action^.ambar[0].i += 1;
+	    "=pre-85KA7:A1" := #action^.ambar[#action^.ambar[0].i].signal;//ALARME VISUAL LINHA OPERANDO
+	    #action^.ambar[0].i += 1;
+	    "=ecoat-47H1:2" := #action^.ambar[#action^.ambar[0].i].signal;//ALARME VISUAL LINHA OPERANDO
+	    #action^.ambar[0].i += 1;
+	    "=oven-42H1:2" := #action^.ambar[#action^.ambar[0].i].signal;//ALARME VISUAL LINHA OPERANDO stove
+	    #action^.ambar[0].i += 1;
+	    "=ecoat-49ka6" := #action^.ambar[#action^.ambar[0].i].signal;//ALARME VISUAL LINHA OPERANDO conveyor
+	END_REGION
+	REGION green
+	    #action^.green[0].i += 1;
+	    "=pre-79H1:3" := #action^.green[#action^.green[0].i].signal;//ALARME VISUAL LINHA PARADA
+	    #action^.green[0].i += 1;
+	    "=pre-85KA8:A1" := #action^.green[#action^.green[0].i].signal;//ALARME VISUAL LINHA PARADA
+	    #action^.green[0].i += 1;
+	    "=ecoat-47H1:3" := #action^.green[#action^.green[0].i].signal;//ALARME VISUAL LINHA PARADA
+	    #action^.green[0].i += 1;
+	    "=oven-42H1:3" := #action^.green[#action^.green[0].i].signal;//ALARME VISUAL LINHA PARADA
+	END_REGION
+	REGION sound
+	    #action^.sound[0].i += 1;
+	    "=pre-79H1:4" := #action^.sound[#action^.sound[0].i].signal;//ALARME SONORO FALHA/DEFEITO
+	    #action^.sound[0].i += 1;
+	    "=pre-86KA1:A1" := #action^.sound[#action^.sound[0].i].signal;//ALARME SONORO FALHA/DEFEITO 
+	    #action^.sound[0].i += 1;
+	    "=ecoat-47H1:4" := #action^.sound[#action^.sound[0].i].signal;//ALARME SONORO FALHA/DEFEITO
+	    #action^.sound[0].i += 1;
+	    "=oven-42H1:4" := #action^.sound[#action^.sound[0].i].signal;//ALARME SONORO FALHA/DEFEITO
+	    #action^.sound[0].i += 1;
+	    "=ecoat-49KA7" := #action^.sound[#action^.sound[0].i].signal;//ALARME SONORO FALHA/DEFEITO conveyor
+	END_REGION
+	REGION red
+	    #action^.red[0].i += 1;
+	    "=pre-79H1:1" := #action^.red[#action^.red[0].i].signal;//ALARME VISUAL FALHA/DEFEITO
+	    #action^.red[0].i += 1;
+	    "=pre-85KA6:A1" := #action^.red[#action^.red[0].i].signal;//ALARME VISUAL FALHA/DEFEITO
+	    #action^.red[0].i += 1;
+	    "=ecoat-47H1:1" := #action^.red[#action^.red[0].i].signal;//ALARME VISUAL FALHA/DEFEITO ecoat
+	    #action^.red[0].i += 1;
+	    "=oven-42H1:1" := #action^.red[#action^.red[0].i].signal;//ALARME VISUAL FALHA/DEFEITO
+	END_REGION
+	REGION metering pumpA tank
+	    #action^.openMeteringPumpA[0].i += 1;
+	    "=pre-80KA6:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA TANQUE 01  EXEMPLO a cada 1hora liga 5 min fica ligado //Gean pediu para deixar ligado direto no autoRun
+	    #action^.openMeteringPumpA[0].i += 1;
+	    "=pre-81KA3:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA TANQUE 02
+	    #action^.openMeteringPumpA[0].i += 3;
+	    "=pre-82KA3:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA TANQUE 05
+	    #action^.openMeteringPumpA[0].i += 1;
+	    "=pre-82KA6:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA TANQUE 06
+	    #action^.openMeteringPumpA[0].i += 2;
+	    "=pre-83KA2:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA TANQUE 08 NEUTRALIZADOR
+	    #action^.openMeteringPumpA[0].i += 3;
+	    "=pre-84KA1:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA DOSADORA FOSFATO TANQUE 11 NANOCERAMICO
+	    #action^.openMeteringPumpA[0].i += 3;
+	    "=ecoat-48KA7:A1" := #action^.openMeteringPumpA[#action^.openMeteringPumpA[0].i].signal;//LIGA BOMBA PNEUMÁTICA CONTAINER DE PASTA **EXEMPLO tambem a cada 1h 5 minutos ligado
+	END_REGION
+	REGION metering pumpB tank
+	    #action^.openMeteringPumpB[0].i += 11;
+	    "=pre-83KA8:A1" := #action^.openMeteringPumpB[#action^.openMeteringPumpB[0].i].signal;//LIGA BOMBA DOSADORA ACELERADOR TANQUE 11 NANOCERAMICO
+	    #action^.openMeteringPumpB[0].i += 3;
+	    "=ecoat-48KA8:A1" := #action^.openMeteringPumpB[#action^.openMeteringPumpB[0].i].signal;//LIGA BOMBA PNEUMÁTICA CONTAINER DE RESINA **EXEMPLO tambem a cada 1h 5 minutos ligado
+	END_REGION
+	REGION recirculation pump tank
+	    #action^.recirculationPumpTank[0].i += 3;
+	    "=pre-81KA5:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 03
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=pre-81KA6:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 04
+	    #action^.recirculationPumpTank[0].i += 3;
+	    "=pre-82KA7:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 07 ENXAGUE 03
+	    #action^.recirculationPumpTank[0].i += 2;
+	    "=pre-83KA3:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 09 ENXAGUE 04
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=pre-83KA5:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 10 ENXAGUE 05
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=pre-83KA7:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 11 NANOCERAMICO
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=pre-84KA4:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 12 ENXAGUE 06
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=pre-84KA5:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA CIRCULAÇÃO TANQUE 13 ENXAGUE 07
+	    #action^.recirculationPumpTank[0].i += 3;
+	    "=ecoat-48KA3:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA RECIRCULADO UF02
+	    #action^.recirculationPumpTank[0].i += 1;
+	    "=ecoat-48KA5:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA RECIRCULADO UF03
+	    #action^.recirculationPumpTank[0].i += 6;
+	    "=ecoat-47KA4:A1" := #action^.recirculationPumpTank[#action^.recirculationPumpTank[0].i].signal;//LIGA BOMBA DE TRANSFERÊNCIA ANOLITO **EXEMPLO talvez seja so recirculacao**
+	END_REGION
+	REGION transfer pump tank
+	    #action^.transferPumpTank[0].i += 5;
+	    "=pre-84KA7:A1" := #action^.transferPumpTank[#action^.transferPumpTank[0].i].signal;//LIGA BOMBA PNEUMATICA TRANSFERENCIA TANQUE RESERVA DESENGRAXE/DECAPANTE (carlos vai revisar a necessidade)
+	    #action^.transferPumpTank[0].i += 6;
+	    "=pre-84KA2:A1" := #action^.transferPumpTank[#action^.transferPumpTank[0].i].signal;//LIGA BOMBA PNEUMATICA TRANSFERENCIA FILTRO PRENSA TANQUE 11 NANOCERAMICO
+	    #action^.transferPumpTank[0].i += 3;
+	    "=ecoat-47KA1:A1" := #action^.transferPumpTank[#action^.transferPumpTank[0].i].signal;//LIGA BOMBA TANQUE 14 RESERVA TINTA KTL
+	    #action^.transferPumpTank[0].i += 5;
+	    "=pre-80KA7:A1" := #action^.transferPumpTank[#action^.transferPumpTank[0].i].signal;//LIGA BOMBA TRANSFERÊNCIA SEPARADOR DE ÓLEO DESENGRAXE 01 tanque 19
+	    #action^.transferPumpTank[0].i += 1;
+	    "=pre-81KA4:A1" := #action^.transferPumpTank[#action^.transferPumpTank[0].i].signal;//LIGA BOMBA TRANSFERÊNCIA SEPARADOR DE ÓLEO DESENGRAXE 02 tanque 20
+	END_REGION
+	REGION openValve replenishment tank
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-80KA3:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VÁLVULA REABASTECIMENTO TANQUE 01
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-80KA8:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VÁLVULA TROCADOR DE CALOR TANQUE 02 (*tanque 2 reabastecimento*)
+	    #action^.openValveReplenishment[0].i += 2;
+	    "=pre-81KA7:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VÁLVULA REABASTECIMENTO TANQUE 04
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-82KA2:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VÁLVULA REABASTECIMENTO TANQUE 05
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-82KA5:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VÁLVULA REABASTECIMENTO TANQUE 06
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-82KA8:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VALVULA REABASTECIMENTO TANQUE 07 ENXAGUE 03
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-83KA1:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRA VALVULA REABASTECIMENTO TANQUE 08 NEUTRALIZADOR
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-83KA4:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VALVULA REABASTECIMENTO TANQUE 09 ENXAGUE 04
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-83KA6:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VALVULA REABASTECIMENTO TANQUE 10 ENXAGUE 05
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=pre-84KA3:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VALVULA REABASTECIMENTO TANQUE 11 NANOCERAMICO
+	    #action^.openValveReplenishment[0].i += 2;
+	    "=pre-84KA6:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//ABRE VALVULA REABASTECIMENTO TANQUE 13 ENXAGUE 07
+	    #action^.openValveReplenishment[0].i += 3;
+	    "=ecoat-48KA4:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;// ABRE VALVULA REPOSIÇÃO AGUA D[0].i TANQUE RECIRCULADO UF02 (V04/KTL-E03) (*tanque 16*)
+	    #action^.openValveReplenishment[0].i += 1;
+	    "=ecoat-48KA6:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;// ABRE VÁLVULA REPOSIÇÃO ÁGUA D[0].i. TANQUE ANOLITO (V01/KTL-P05) (*tanque 17*)
+	    #action^.openValveReplenishment[0].i += 6;
+	    //"=ecoat-48KA1:A1" := #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal;//(*anolito tanque 23)
+	    // Reposição Anolito
+	    IF "dbData".actual.conductivitySensor[23].signal > "spCondutivMaxAnolito"
+	        OR #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal THEN
+	        "=ecoat-48KA1:A1" := TRUE;
+	    END_IF;
+	    IF "dbData".actual.conductivitySensor[23].signal < "spCondutivMinAnolito"
+	        AND NOT  #action^.openValveReplenishment[#action^.openValveReplenishment[0].i].signal THEN
+	        "=ecoat-48KA1:A1" := FALSE;
+	    END_IF;
+	END_REGION
+	REGION reset control tank
+	END_REGION
+	REGION spray wash tank
+	    #action^.sprayWash[0].i += 14;
+	    "=ecoat-47KA3:A1" := #action^.sprayWash[#action^.sprayWash[0].i].signal;// ABRE VÁLVULA SPRAY DE LAVAÇÃO TANQUE TINTA KTL (V04/KTL-E01) 
+	END_REGION
+	REGION powerRangeControl tank
+	    #action^.powerRangeControl[0].i := 1;
+	    "=ecoat-Q0+" := #action^.powerRangeControl[#action^.powerRangeControl[0].i].signal;//CONTROLE DE VARIAÇÃO DE POTENCIA RETIFICADOR DE TINTA KTL (*retificador*)
+	    
+	    #action^.powerRangeControl[0].i := 5;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setInputMax := 100;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setInputMin := 0;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setScaleMax := 28200;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setScaleMin := -2000;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setSignal :=
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].signal;
+	    "fScale"(#action^.powerRangeControl[#action^.powerRangeControl[0].i].scale);
+	    "=pre-18U1" := //CONTROLE DE VARIAÇÃO DE POTENCIA TIRISTOR RESISTENCIA TANQUE DECAPANTE 01
+	    REAL_TO_INT(#action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.getResult);
+	    
+	    #action^.powerRangeControl[0].i := 6;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setInputMax := 100;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setInputMin := 0;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setScaleMax := 28200;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setScaleMin := -2000;
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.setSignal :=
+	    #action^.powerRangeControl[#action^.powerRangeControl[0].i].signal;
+	    "fScale"(#action^.powerRangeControl[#action^.powerRangeControl[0].i].scale);
+	    "=pre-20U1" :=//CONTROLE DE VARIAÇÃO DE POTENCIA TIRISTOR RESISTENCIA DECAPANTE 02
+	    REAL_TO_INT(#action^.powerRangeControl[#action^.powerRangeControl[0].i].scale.getResult);
+	    
+	END_REGION
+	REGION OpenValveopenValveHeatExchanger tank
+	    #action^.openValveHeatExchanger[0].i += 1;
+	    "=pre-80KA4:A1" := #action^.openValveHeatExchanger[#action^.openValveHeatExchanger[0].i].signal;//ABRE VÁLVULA TROCADOR DE CALOR TANQUE 01
+	    #action^.openValveHeatExchanger[0].i += 1;
+	    "=pre-81KA1:A1" := #action^.openValveHeatExchanger[#action^.openValveHeatExchanger[0].i].signal;//ABRE VÁLVULA TROCADOR DE CALOR TANQUE 02
+	END_REGION
+	REGION CloseValveHeatExchanger tank
+	    #action^.closeValveHeatExchanger[0].i += 1;
+	    "=pre-81KA2:A1" := #action^.closeValveHeatExchanger[#action^.closeValveHeatExchanger[0].i].signal;//FECHA VÁLVULA TROCADOR DE CALOR TANQUE 02
+	    #action^.closeValveHeatExchanger[0].i += 1;
+	    "=pre-80KA5:A1" := #action^.closeValveHeatExchanger[#action^.closeValveHeatExchanger[0].i].signal;//FECHA VÁLVULA TROCADOR DE CALOR TANQUE 01
+	END_REGION
+	REGION enableThyristor tank
+	    #action^.enableThyristorTank[0].i += 5;
+	    "=pre-82KA1:A1" := #action^.enableThyristorTank[#action^.enableThyristorTank[0].i].signal;//HABILITA TIRISTOR DE POTÊNCIA RESISTÊNCIAS AQUECIMENTO TANQUE 05
+	    #action^.enableThyristorTank[0].i += 1;
+	    "=pre-82KA4:A1" := #action^.enableThyristorTank[#action^.enableThyristorTank[0].i].signal;//HABILITA TIRISTOR DE POTÊNCIA RESISTÊNCIAS AQUECIMENTO TANQUE 06
+	END_REGION
+	REGION onOffRectifier tank
+	    #action^.onOffRectifier[0].i += 1;
+	    "=ecoat-49KA1:A1" := #action^.onOffRectifier[#action^.onOffRectifier[0].i].signal;//LIGA/DESLIGA RETIFICADOR
+	END_REGION
+	REGION onOffTermochiller tank
+	    #action^.onOffTermochiller[0].i += 1;
+	    "=ecoat-49KA2:A1" := #action^.onOffTermochiller[#action^.onOffTermochiller[0].i].signal;//LIGA/DESLIGA TERMOCHILLER
+	END_REGION
+	REGION recirculation pump boiler
+	    #action^.recirculationPumpBoiler[0].i += 1;
+	    "=pre-79KA1:A1" := #action^.recirculationPumpBoiler[#action^.recirculationPumpBoiler[0].i].signal;//lIGA BOMBA DE CIRCULAÇÃO BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION funOnBoiler
+	    #action^.funOnBoiler[0].i += 1;
+	    "=pre-79KA2:A1" := #action^.funOnBoiler[#action^.funOnBoiler[0].i].signal;//lIGA VENTILADOR QUEIMADOR GERADOR DE CALOR BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION eletronicPowerOnBoiler
+	    #action^.electronicPowerOnBoiler[0].i += 1;
+	    "=pre-79KA3:A1" := #action^.electronicPowerOnBoiler[#action^.electronicPowerOnBoiler[0].i].signal;//lIGA ALIMENTAÇÃO ELETRÔNICA QUEIMADOR GERADOR DE CALOR BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION enableHeatGeneratorBoiler
+	    #action^.enableHeatGeneratorBoiler[0].i += 1;
+	    "=pre-79KA4:A1" := #action^.enableHeatGeneratorBoiler[#action^.enableHeatGeneratorBoiler[0].i].signal;//HABILITA COMANDO QUEIMADOR GERADOR DE CALOR BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION triggersFirstBoilerStage boiler
+	    #action^.triggersFirstStageBoiler[0].i += 1;
+	    "=pre-80KA1:A1" := #action^.triggersFirstStageBoiler[#action^.triggersFirstStageBoiler[0].i].signal;//ACIONA 1o ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION triggersSecondBoilerStage boiler
+	    #action^.triggersSecondStageBoiler[0].i += 1;
+	    "=pre-80KA2:A1" := #action^.triggersSecondStageBoiler[#action^.triggersSecondStageBoiler[0].i].signal;//ACIONA 2 ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR BOILER REDE ÁGUA AQUECIDA
+	END_REGION
+	REGION spray pump exausth
+	    #action^.sprayPump[0].i += 2;
+	    "=pre-81KA8:A1" := #action^.sprayPump[#action^.sprayPump[0].i].signal;//LIGA BOMBA ASPERSÃO LAVADOR DE GASES EXEMPLO ligado direto
+	END_REGION
+	REGION funOnExhaust
+	    #action^.funOnExhaust[0].i += 1;
+	    "=pre-pre17v2_Start" := #action^.funOnExhaust[#action^.funOnExhaust[0].i].signal;
+	    #action^.funOnExhaust[0].i += 1;
+	    "=pre-pre17v1_Start" := #action^.funOnExhaust[#action^.funOnExhaust[0].i].signal;
+	    #action^.funOnExhaust[0].i += 1;
+	    "=oven-45KA1:A1" := #action^.funOnExhaust[#action^.funOnExhaust[0].i].signal;//LIGA VENTILADOR 01 GERADOR DE CALOR 02 ESTUFA DE POLIMERIZAÇÃO exaustor
+	END_REGION
+	REGION reset control exhaust
+	    #action^.resetControlExhaust[0].i += 1;
+	    "=pre-pre17v2_Reset" := #action^.resetControlExhaust[#action^.resetControlExhaust[0].i].signal;
+	    #action^.resetControlExhaust[0].i += 1;
+	    "=pre-pre17v1_Reset" := #action^.resetControlExhaust[#action^.resetControlExhaust[0].i].signal;
+	END_REGION
+	REGION electronicPowerOnStove
+	    #action^.electronicPowerOnOven[0].i += 1;
+	    "=oven-42KA2:A1" := #action^.electronicPowerOnOven[#action^.electronicPowerOnOven[0].i].signal;//LIGA ALIMENTAÇÃO ELETR0NICA QUEIMADOR GERADOR DE CALOR 01 ESTUFA DE PRE-SECAGEM
+	    #action^.electronicPowerOnOven[0].i += 1;
+	    "=oven-43KA3:A1" := #action^.electronicPowerOnOven[#action^.electronicPowerOnOven[0].i].signal;//LIGA AIMENTAÇÃO ELETRONICA QUEIAMDOR GERADOR DE CALOR 02 ESTUFA DE SECAGEM
+	    #action^.electronicPowerOnOven[0].i += 1;
+	    "=oven-43KA8:A1" := #action^.electronicPowerOnOven[#action^.electronicPowerOnOven[0].i].signal;//LIGA ALIMENTAÇÃO ELETRONICA QUEIMADOR GERADOR DE CALOR 03 ESTUFA DE SECAGEM
+	    #action^.electronicPowerOnOven[0].i += 1;
+	    "=oven-44KA5:A1" := #action^.electronicPowerOnOven[#action^.electronicPowerOnOven[0].i].signal;//LIGA ALIMENTAÇÃO ELETRÔNICA QUEIMADOR GERADOR DE CALOR 04 ESTUFA DE SECAGEM
+	END_REGION
+	REGION ovenCooling
+	    IF "dbData".actual.temperatureOven[1].signal >= ("spResfriamentoForno" + 200) THEN
+	        "mResfriamGerador1" := true;
+	    END_IF;
+	    IF "dbData".actual.temperatureOven[1].signal <= "spResfriamentoForno" THEN
+	        "mResfriamGerador1" := false;
+	    END_IF;
+	    
+	    IF "dbData".actual.temperatureOven[2].signal >= ("spResfriamentoForno" + 200) THEN
+	        "mResfriamGerador2" := true;
+	    END_IF;
+	    IF "dbData".actual.temperatureOven[2].signal <= "spResfriamentoForno" THEN
+	        "mResfriamGerador2" := false;
+	    END_IF;
+	    
+	    IF "dbData".actual.temperatureOven[3].signal >= ("spResfriamentoForno" + 200) THEN
+	        "mResfriamGerador3" := true;
+	    END_IF;
+	    IF "dbData".actual.temperatureOven[3].signal <= "spResfriamentoForno" THEN
+	        "mResfriamGerador3" := false;
+	    END_IF;
+	    
+	    IF "dbData".actual.temperatureOven[4].signal >= ("spResfriamentoForno" + 200) THEN
+	        "mResfriamGerador4" := true;
+	    END_IF;
+	    IF "dbData".actual.temperatureOven[4].signal <= "spResfriamentoForno" THEN
+	        "mResfriamGerador4" := false;
+	    END_IF;
+	    
+	    "mResumoSafety" := "dbSafety".aux1FeedbackPre AND "dbSafety".aux1FeedbackEcoat AND "dbSafety".aux1FeedbackOven;
+	END_REGION
+	REGION funOnStove
+	    #action^.funOnOven[0].i += 1;
+	    "=oven-42KA1:A1" := #action^.funOnOven[#action^.funOnOven[0].i].signal OR ("mResfriamGerador1" AND "mResumoSafety");//LIGA VENTILADOR GERADOR DE CALOR 01 ESTUFA DE PRÉ-SECAGEM
+	    #action^.funOnOven[0].i += 1;
+	    "=oven-43KA2:A1" := #action^.funOnOven[#action^.funOnOven[0].i].signal OR ("mResfriamGerador2" AND "mResumoSafety");//LIGA VENTILADOR GERADOR DE CALOR 02 ESTUFA DE SECAGEM
+	    #action^.funOnOven[0].i += 1;
+	    "=oven-43KA7:A1" := #action^.funOnOven[#action^.funOnOven[0].i].signal OR ("mResfriamGerador3" AND "mResumoSafety");//LIGA VENTILADOR GERADOR DE CALOR 03 ESTUFA DE SECAGEM
+	    #action^.funOnOven[0].i += 1;
+	    "=oven-44KA4:A1" := #action^.funOnOven[#action^.funOnOven[0].i].signal OR ("mResfriamGerador4" AND "mResumoSafety");//LIGA VENTILADOR GERADOR DE CALOR 04 ESTUFA DE SECAGEM
+	END_REGION
+	REGION triggersFirstStage stove
+	    #action^.triggersFirstStageOven[0].i += 1;
+	    "=oven-42KA4:A1" := #action^.triggersFirstStageOven[#action^.triggersFirstStageOven[0].i].signal;//ACIONA 1o ESTAGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 01 ESTUFA DE PRE-SECAGEM
+	    #action^.triggersFirstStageOven[0].i += 1;
+	    "=oven-43KA5:A1" := #action^.triggersFirstStageOven[#action^.triggersFirstStageOven[0].i].signal;//ACIONA 1o ESTAGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 02 ESTUFA DE SECAGEMEND_REGION
+	    #action^.triggersFirstStageOven[0].i += 1;
+	    "=oven-44KA2:A1" := #action^.triggersFirstStageOven[#action^.triggersFirstStageOven[0].i].signal;//ACIONA 1o ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 03 ESTUFA DE SECAGEM
+	    #action^.triggersFirstStageOven[0].i += 1;
+	    "=oven-44KA7:A1" := #action^.triggersFirstStageOven[#action^.triggersFirstStageOven[0].i].signal;//ACIONA 1o ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 04 ESTUFA DE SECAGEM
+	END_REGION
+	REGION triggersSecondStage stove
+	    #action^.triggersSecondStageOven[0].i += 1;
+	    "=oven-43KA1:A1" := #action^.triggersSecondStageOven[#action^.triggersSecondStageOven[0].i].signal;//ACIONA 2o ESTAGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 01 ESTUFA DE PRE-SECAGEM
+	    #action^.triggersSecondStageOven[0].i += 1;
+	    "=oven-43KA6:A1" := #action^.triggersSecondStageOven[#action^.triggersSecondStageOven[0].i].signal;//ACIONA 2o ESTAGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 02 ESTUFA DE SECAGEM
+	    #action^.triggersSecondStageOven[0].i += 1;
+	    "=oven-44KA3:A1" := #action^.triggersSecondStageOven[#action^.triggersSecondStageOven[0].i].signal;//ACIONA 2o ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 03 ESTUFA DE SECAGEM
+	    #action^.triggersSecondStageOven[0].i += 1;
+	    "=oven-44KA8:A1" := #action^.triggersSecondStageOven[#action^.triggersSecondStageOven[0].i].signal;//ACIONA 2o ESTÁGIO AQUECIMENTO QUEIMADOR GERADOR DE CALOR 04 ESTUFA DE SECAGEM
+	END_REGION
+	REGION enableHeatGeneratorStove
+	    #action^.enableHeatGeneratorOven[0].i += 1;
+	    "=oven-42KA3:A1" := #action^.enableHeatGeneratorOven[#action^.enableHeatGeneratorOven[0].i].signal;//HABILITA GERADOR QUEIMADOR DE CALOR 01 ESTUFA DE PRE-SECAGEM
+	    #action^.enableHeatGeneratorOven[0].i += 1;
+	    "=oven-43KA4:A1" := #action^.enableHeatGeneratorOven[#action^.enableHeatGeneratorOven[0].i].signal;//HABILITA QUEIMADOR GERADOR DE CALOR 02 ESTUFA DE SECAGEM
+	    #action^.enableHeatGeneratorOven[0].i += 1;
+	    "=oven-44KA1:A1" := #action^.enableHeatGeneratorOven[#action^.enableHeatGeneratorOven[0].i].signal;//HABILITA QUEIMADOR GERADOR DE CALOR 03 ESTUFA DE SECAGEM
+	    #action^.enableHeatGeneratorOven[0].i += 1;
+	    "=oven-44KA6:A1" := #action^.enableHeatGeneratorOven[#action^.enableHeatGeneratorOven[0].i].signal;//HABILITA QUEIMADOR GERADOR DE CALOR 04 ESTUFA DE SECAGEM
+	END_REGION
+	REGION liftingTableAdvance conveyor
+	    #action^.liftingTableAdvance[0].i += 2;
+	    "=ecoat-49KA3:A1" := #action^.liftingTableAdvance[#action^.liftingTableAdvance[0].i].signal;//MESA DE ELEVAÇÃO
+	END_REGION
+	REGION liftingTableReturn conveyor
+	    #action^.liftingTableReturn[0].i += 2;
+	    "=ecoat-49KA5:A1" := #action^.liftingTableReturn[#action^.liftingTableReturn[0].i].signal;//MESA DE ELEVAÇÃO
+	END_REGION
+	REGION resetFailureEom
+	    #action^.resetFailureEom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.1" := #action^.resetFailureEom[#action^.resetFailureEom[0].i].signal;   //RESET FALHA CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.resetFailureEom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.1" := #action^.resetFailureEom[#action^.resetFailureEom[0].i].signal;   //RESET FALHA CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.resetFailureEom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.1" := #action^.resetFailureEom[#action^.resetFailureEom[0].i].signal;   //RESET FALHA CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.resetFailureEom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.1" := #action^.resetFailureEom[#action^.resetFailureEom[0].i].signal;   //RESET FALHA CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.resetFailureEom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.1" := #action^.resetFailureEom[#action^.resetFailureEom[0].i].signal;   //RESET FALHA CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃ
+	END_REGION
+	REGION upAndForwardEom
+	    #action^.upAndForwardEom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.2" := #action^.upAndForwardEom[#action^.upAndForwardEom[0].i].signal;   //COMANDO CONVERSOR SOBE/AVANÇA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.upAndForwardEom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.2" := #action^.upAndForwardEom[#action^.upAndForwardEom[0].i].signal;   //COMANDO CONVERSOR SOBE/AVANÇA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.upAndForwardEom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.2" := #action^.upAndForwardEom[#action^.upAndForwardEom[0].i].signal;   //COMANDO CONVERSOR SOBE/AVANÇA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.upAndForwardEom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.2" := #action^.upAndForwardEom[#action^.upAndForwardEom[0].i].signal;   //COMANDO CONVERSOR SOBE/AVANÇA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.upAndForwardEom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.2" := #action^.upAndForwardEom[#action^.upAndForwardEom[0].i].signal;   //COMANDO CONVERSOR SOBE/AVANÇA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO 
+	END_REGION
+	REGION speed1Eom
+	    #action^.speed1Eom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.5" := #action^.speed1Eom[#action^.speed1Eom[0].i].signal;   //COMANDO CONVERSOR 1 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed1Eom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.5" := #action^.speed1Eom[#action^.speed1Eom[0].i].signal;   //COMANDO CONVERSOR 1 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO  
+	    #action^.speed1Eom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.5" := #action^.speed1Eom[#action^.speed1Eom[0].i].signal;   //COMANDO CONVERSOR 1 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed1Eom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.5" := #action^.speed1Eom[#action^.speed1Eom[0].i].signal;   //COMANDO CONVERSOR 1 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed1Eom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.5" := #action^.speed1Eom[#action^.speed1Eom[0].i].signal;   //COMANDO CONVERSOR 1 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	END_REGION
+	REGION speed2Eom
+	    #action^.speed2Eom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.6" := #action^.speed2Eom[#action^.speed2Eom[0].i].signal;   //COMANDO CONVERSOR 2 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed2Eom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.6" := #action^.speed2Eom[#action^.speed2Eom[0].i].signal;   //COMANDO CONVERSOR 2 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO    
+	    #action^.speed2Eom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.6" := #action^.speed2Eom[#action^.speed2Eom[0].i].signal;   //COMANDO CONVERSOR 2 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed2Eom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.6" := #action^.speed2Eom[#action^.speed2Eom[0].i].signal;   //COMANDO CONVERSOR 2 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.speed2Eom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.6" := #action^.speed2Eom[#action^.speed2Eom[0].i].signal;   //COMANDO CONVERSOR 2 VELOCIDADE MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	END_REGION
+	REGION downAndReturnEom
+	    #action^.downAndReturnEom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.3" := #action^.downAndReturnEom[#action^.downAndReturnEom[0].i].signal;   //COMANDO CONVERSOR DESCE/RECUA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.downAndReturnEom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.3" := #action^.downAndReturnEom[#action^.downAndReturnEom[0].i].signal;   //COMANDO CONVERSOR DESCE/RECUA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.downAndReturnEom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.3" := #action^.downAndReturnEom[#action^.downAndReturnEom[0].i].signal;   //COMANDO CONVERSOR DESCE/RECUA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.downAndReturnEom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.3" := #action^.downAndReturnEom[#action^.downAndReturnEom[0].i].signal;   //COMANDO CONVERSOR DESCE/RECUA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.downAndReturnEom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.3" := #action^.downAndReturnEom[#action^.downAndReturnEom[0].i].signal;   //COMANDO CONVERSOR DESCE/RECUA MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	END_REGION
+	REGION setParameterEom
+	    #action^.setParameterEom[0].i += 1;
+	    "=eom01-8U1.3:X1:X12.4" := #action^.setParameterEom[#action^.setParameterEom[0].i].signal;   //SET PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.setParameterEom[0].i += 1;
+	    "=eom02-8U1.3:X1:X12.4" := #action^.setParameterEom[#action^.setParameterEom[0].i].signal;   //SET PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.setParameterEom[0].i += 1;
+	    "=eom03-8U1.3:X1:X12.4" := #action^.setParameterEom[#action^.setParameterEom[0].i].signal;   //SET PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.setParameterEom[0].i += 1;
+	    "=eom04-8U1.3:X1:X12.4" := #action^.setParameterEom[#action^.setParameterEom[0].i].signal;   //SET PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.setParameterEom[0].i += 1;
+	    "=eom05-8U1.3:X1:X12.4" := #action^.setParameterEom[#action^.setParameterEom[0].i].signal;   //SET PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	END_REGION
+	REGION safetyActionEom
+	    #action^.safetyActionEom[0].i += 1;
+	    "=eom01-11ka1:13" := #action^.safetyActionEom[#action^.safetyActionEom[0].i].signal;   //ACIONAMENTO SEGURANÇA PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.safetyActionEom[0].i += 1;
+	    "=eom02-11ka1:13" := #action^.safetyActionEom[#action^.safetyActionEom[0].i].signal;   //ACIONAMENTO SEGURANÇA PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.safetyActionEom[0].i += 1;
+	    "=eom03-11ka1:13" := #action^.safetyActionEom[#action^.safetyActionEom[0].i].signal;   //ACIONAMENTO SEGURANÇA PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.safetyActionEom[0].i += 1;
+	    "=eom04-11ka1:13" := #action^.safetyActionEom[#action^.safetyActionEom[0].i].signal;   //ACIONAMENTO SEGURANÇA PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO
+	    #action^.safetyActionEom[0].i += 1;
+	    "=eom05-11ka1:13" := #action^.safetyActionEom[#action^.safetyActionEom[0].i].signal;   //ACIONAMENTO SEGURANÇA PARAMETROS CONVERSOR MOTOREDUTOR ELEVAÇÃO/TRANSLAÇÃO 
+	END_REGION
+	REGION qty
+	    #tempInt := #action^.resetFailureEom[0].i;
+	    #tempInt := #action^.speed1Eom[0].i;
+	    #tempInt := #action^.speed2Eom[0].i;
+	    #tempInt := #action^.safetyActionEom[0].i;
+	    #tempInt := #action^.setParameterEom[0].i;
+	    #tempInt := #action^.upAndForwardEom[0].i;
+	    #tempInt := #action^.downAndReturnEom[0].i;
+	    #tempInt := #action^.ambar[0].i;
+	    #tempInt := #action^.green[0].i;
+	    #tempInt := #action^.sound[0].i;
+	    #tempInt := #action^.red[0].i;
+	    #tempInt := #action^.recirculationPumpTank[0].i;
+	    #tempInt := #action^.electronicPowerOnOven[0].i;
+	    #tempInt := #action^.openValveReplenishment[0].i;
+	    #tempInt := #action^.funOnOven[0].i;
+	    #tempInt := #action^.closeValveReplenishment[0].i;
+	    #tempInt := #action^.powerRangeControl[0].i;
+	    #tempInt := #action^.triggersFirstStageOven[0].i;
+	    #tempInt := #action^.triggersSecondStageOven[0].i;
+	    #tempInt := #action^.triggersFirstStageBoiler[0].i;
+	    #tempInt := #action^.triggersSecondStageBoiler[0].i;
+	    #tempInt := #action^.enableHeatGeneratorOven[0].i;
+	    #tempInt := #action^.onOffRectifier[0].i;
+	    #tempInt := #action^.onOffTermochiller[0].i;
+	    #tempInt := #action^.enableThyristorTank[0].i;
+	    #tempInt := #action^.liftingTableAdvance[0].i;
+	    #tempInt := #action^.liftingTableReturn[0].i;
+	    #tempInt := #action^.openValveHeatExchanger[0].i;
+	    #tempInt := #action^.closeValveHeatExchanger[0].i;
+	    #tempInt := #action^.sprayWash[0].i;
+	    #tempInt := #action^.funOnBoiler[0].i;
+	    #tempInt := #action^.funOnExhaust[0].i;
+	    #tempInt := #action^.openMeteringPumpA[0].i;
+	    #tempInt := #action^.openMeteringPumpA[0].i;
+	    #tempInt := #action^.openMeteringPumpA[0].i;
+	    #tempInt := #action^.openMeteringPumpA[0].i;
+	    #tempInt := #action^.recirculationPumpBoiler[0].i;
+	    #tempInt := #action^.transferPumpTank[0].i;
+	    #tempInt := #action^.oilSeparatorPump[0].i;
+	    #tempInt := #action^.resetControlExhaust[0].i;
+	    #tempInt := #action^.resetControlTank[0].i;
+	    #tempInt := #action^.sprayPump[0].i;
+	END_REGION
+END_FUNCTION
+

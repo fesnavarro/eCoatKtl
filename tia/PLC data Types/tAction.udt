@@ -1,0 +1,48 @@
+﻿TYPE "tAction"
+VERSION : 0.8
+   STRUCT
+      sound : Array[0..5] of "tFullSignalBool";
+      red : Array[0..5] of "tFullSignalBool";
+      green : Array[0..5] of "tFullSignalBool";
+      ambar : Array[0..5] of "tFullSignalBool";
+      resetFailureEom : Array[0..5] of "tFullSignalBool";
+      speed1Eom : Array[0..5] of "tFullSignalBool";
+      speed2Eom : Array[0..5] of "tFullSignalBool";
+      safetyActionEom : Array[0..5] of "tFullSignalBool";
+      setParameterEom : Array[0..5] of "tFullSignalBool";
+      upAndForwardEom : Array[0..5] of "tFullSignalBool";
+      downAndReturnEom : Array[0..5] of "tFullSignalBool";
+      recirculationPumpTank : Array[0..25] of "tFullSignalBool";
+      electronicPowerOnOven : Array[0..5] of "tFullSignalBool";
+      openValveReplenishment : Array[0..25] of "tFullSignalBool";
+      funOnOven : Array[0..5] of "tFullSignalBool";
+      closeValveReplenishment : Array[0..25] of "tFullSignalBool";
+      powerRangeControl : Array[0..25] of "tFullSignalInt";
+      triggersFirstStageOven : Array[0..5] of "tFullSignalBool";
+      triggersSecondStageOven : Array[0..5] of "tFullSignalBool";
+      triggersFirstStageBoiler : Array[0..1] of "tFullSignalBool";
+      triggersSecondStageBoiler : Array[0..1] of "tFullSignalBool";
+      enableHeatGeneratorOven : Array[0..5] of "tFullSignalBool";
+      onOffRectifier : Array[0..1] of "tFullSignalBool";
+      onOffTermochiller : Array[0..25] of "tFullSignalBool";
+      enableThyristorTank : Array[0..25] of "tFullSignalBool";
+      liftingTableAdvance : Array[0..6] of "tFullSignalBool";
+      openValveHeatExchanger : Array[0..25] of "tFullSignalBool";
+      closeValveHeatExchanger : Array[0..25] of "tFullSignalBool";
+      sprayWash : Array[0..25] of "tFullSignalBool";
+      funOnBoiler : Array[0..1] of "tFullSignalBool";
+      funOnExhaust : Array[0..3] of "tFullSignalBool";
+      openMeteringPumpA : Array[0..25] of "tFullSignalBool";
+      openMeteringPumpB : Array[0..25] of "tFullSignalBool";
+      electronicPowerOnBoiler : Array[0..1] of "tFullSignalBool";
+      enableHeatGeneratorBoiler : Array[0..1] of "tFullSignalBool";
+      recirculationPumpBoiler : Array[0..1] of "tFullSignalBool";
+      transferPumpTank : Array[0..25] of "tFullSignalBool";
+      oilSeparatorPump : Array[0..25] of "tFullSignalBool";
+      resetControlExhaust : Array[0..3] of "tFullSignalBool";
+      resetControlTank : Array[0..25] of "tFullSignalBool";
+      sprayPump : Array[0..25] of "tFullSignalBool";
+      liftingTableReturn : Array[0..6] of "tFullSignalBool";
+   END_STRUCT;
+
+END_TYPE

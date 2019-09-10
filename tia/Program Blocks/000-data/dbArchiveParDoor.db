@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveParDoor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveParDoor"
+
+BEGIN
+
+END_DATA_BLOCK
+

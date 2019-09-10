@@ -1,0 +1,12 @@
+﻿TYPE "tDiag"
+VERSION : 0.8
+   STRUCT
+      _int : Int;
+      _laddr : HW_DEVICE;
+      mode : UInt;
+      state : Bool;
+      i : Int;
+   END_STRUCT;
+
+END_TYPE
+

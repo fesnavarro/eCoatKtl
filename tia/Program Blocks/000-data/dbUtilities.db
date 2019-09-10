@@ -1,0 +1,35 @@
+﻿DATA_BLOCK "dbUtilities"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      feedbackLights { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      feedbackSound { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      remote : Array[1..1] of Struct
+         equipamentId : DInt;
+         controlId : DInt;
+      END_STRUCT;
+      autoReset { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      powerBackupEnable { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      pulseOnRise { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..100] of "tPulseOnRise";
+      dateTime {InstructionName := 'DTL'; LibVersion := '1.0'} : DTL;
+      blink1000ms : "tStatus";
+      blink250ms { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      ia { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      hideOpMenu : Bool;
+      timeHideOpMenu { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      preHeating : Struct
+         hourStart : Int;
+         minuteStart : Int;
+         hourStop : Int;
+         minuteStop : Int;
+         SecondStart : Int;
+         SecondStop : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

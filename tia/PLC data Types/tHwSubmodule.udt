@@ -1,0 +1,9 @@
+﻿TYPE "tHwSubmodule"
+VERSION : 0.8
+   STRUCT
+      i : Int;
+      address : HW_SUBMODULE;
+   END_STRUCT;
+
+END_TYPE
+

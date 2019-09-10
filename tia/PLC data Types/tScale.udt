@@ -1,0 +1,17 @@
+﻿TYPE "tScale"
+TITLE = tScale
+VERSION : 0.8
+//Scale data type structure
+   STRUCT
+      setSignal : Real;
+      setInputMin : Real;
+      setInputMax : Real;
+      setScaleMin : Real;
+      setScaleMax : Real;
+      rate : Real;
+      offset : Real;
+      getResult : Real;
+   END_STRUCT;
+
+END_TYPE
+

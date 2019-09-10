@@ -1,0 +1,19 @@
+﻿TYPE "tAutoStandard"
+VERSION : 0.8
+   STRUCT
+      work : Bool;
+      on : Bool;
+      status : Array[1..2] of "tStatus";
+      up : Bool;
+      down : Bool;
+      forward : Bool;
+      return : Bool;
+      lowPower : Bool;
+      averagePower : Bool;
+      highPower : Bool;
+      intMem : Int;
+      pulseOnRise : "tPulseOnRise";
+   END_STRUCT;
+
+END_TYPE
+

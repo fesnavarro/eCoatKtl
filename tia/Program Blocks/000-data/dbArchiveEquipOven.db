@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveEquipOven"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveEquipOven"
+
+BEGIN
+
+END_DATA_BLOCK
+

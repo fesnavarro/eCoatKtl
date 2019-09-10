@@ -1,0 +1,15 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoShipping"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      autoShipping : Array[1..2] of "tAutoShipping";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,15 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoConveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      autoConveyor { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..6] of "tAutoConveyor";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

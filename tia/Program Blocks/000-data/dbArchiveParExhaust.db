@@ -1,0 +1,9 @@
+﻿DATA_BLOCK "dbArchiveParExhaust"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+"fbArchiveParExhaust"
+
+BEGIN
+
+END_DATA_BLOCK
+

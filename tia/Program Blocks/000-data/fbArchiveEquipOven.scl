@@ -1,0 +1,15 @@
+﻿FUNCTION_BLOCK "fbArchiveEquipOven"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      equipmentOven { ExternalWritable := 'False'} : Array[1..4] of "tEquipment";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

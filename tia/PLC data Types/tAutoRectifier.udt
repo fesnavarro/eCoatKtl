@@ -1,0 +1,12 @@
+﻿TYPE "tAutoRectifier"
+VERSION : 0.8
+   STRUCT
+      "standard" : "tAutoStandard";
+      scaleRamp : Array[0..5] of "tScale";
+      scaleOutput : "tScale";
+      ramp : Array[0..5] of "tStatus";
+      "time" : Array[0..5] of "tStatus";
+   END_STRUCT;
+
+END_TYPE
+

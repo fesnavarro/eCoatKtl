@@ -1,0 +1,15 @@
+﻿DATA_BLOCK "dbParOven"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR 
+      parOven { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..4] of "tParameterOven";
+      firstRunning { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tStatus";
+      ia { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tIndex";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

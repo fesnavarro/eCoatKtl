@@ -1,0 +1,137 @@
+﻿FUNCTION "fFailure_1" : Void
+TITLE = fFailure
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '503'
+VERSION : 0.8
+//Function for system failure
+   VAR_IN_OUT 
+      failure : "tFailure";
+   END_VAR
+
+
+BEGIN
+	#failure :=
+	"dbMonitoring".failure[856];
+	
+	(*Default parameters of failure function*)
+	//#failure.setConfig := ;
+	//#failure.setActionA := ;
+	//#failure.setActionB := ;
+	//#failure.setDelay := ;
+	//#failure.setResetFailure := ;
+	//#failure.setStatusA := ;
+	//#failure.setStatusB := ;
+	(**)
+	//:= #failure.getFailureDetected ;
+	//  
+	
+	(*Default parameters of failure function*) 
+	
+	(*
+	    Fault function in action
+	    *)
+	
+	//Ladder line 0
+	IF #failure.setResetFailure THEN
+	    #failure.pulseOnRise.setSignal := TRUE;
+	ELSE
+	    #failure.pulseOnRise.setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#failure.pulseOnRise);
+	
+	IF #failure.pulseOnRise.getSignal THEN
+	    #failure.getFailureDetected := FALSE;
+	END_IF;
+	
+	//Ladder line 1
+	IF (NOT #failure.setConfig.%X0) AND #failure.setActionA OR
+	    #failure.setConfig.%X0 AND (NOT #failure.setActionA) THEN
+	    #failure.confirmA := TRUE;
+	ELSE
+	    #failure.confirmA := FALSE;
+	END_IF;
+	
+	//Ladder line 2
+	IF (NOT #failure.setConfig.%X1) AND #failure.setActionB OR
+	    #failure.setConfig.%X1 AND (NOT #failure.setActionB) THEN
+	    #failure.confirmB := TRUE;
+	ELSE
+	    #failure.confirmB := FALSE;
+	END_IF;
+	
+	//Ladder line 3
+	IF (NOT #failure.setConfig.%X2) AND #failure.setStatusA OR
+	    #failure.setConfig.%X2 AND (NOT #failure.setStatusA) THEN
+	    #failure.stsA := TRUE;
+	ELSE
+	    #failure.stsA := FALSE;
+	END_IF;
+	
+	//Ladder line 4
+	IF (NOT #failure.setConfig.%X3) AND #failure.setStatusB OR
+	    #failure.setConfig.%X3 AND (NOT #failure.setStatusB) THEN
+	    #failure.stsB := TRUE;
+	ELSE
+	    #failure.stsB := FALSE;
+	END_IF;
+	
+	//Ladder line 5
+	IF (NOT #failure.setConfig.%X4) AND #failure.confirmA AND
+	    #failure.confirmB THEN
+	    #failure.aux[0] := TRUE;
+	ELSE
+	    #failure.aux[0] := FALSE;
+	END_IF;
+	
+	IF #failure.setConfig.%X4 AND #failure.confirmA OR
+	    #failure.confirmB THEN
+	    #failure.aux[1] := TRUE;
+	ELSE
+	    #failure.aux[1] := FALSE;
+	END_IF;
+	
+	IF #failure.aux[0] OR #failure.aux[1] THEN
+	    #failure.aux[2] := TRUE;
+	ELSE
+	    #failure.aux[2] := FALSE;
+	END_IF;
+	
+	IF #failure.aux[2] AND
+	    (NOT #failure.setConfig.%X5) AND (NOT #failure.stsA) OR
+	    (NOT #failure.stsB) THEN
+	    #failure.aux[3] := TRUE;
+	ELSE
+	    #failure.aux[3] := FALSE;
+	END_IF;
+	
+	IF #failure.aux[2] AND
+	    #failure.setConfig.%X5 AND (NOT #failure.stsA) AND
+	    (NOT #failure.stsB) THEN
+	    #failure.aux[4] := TRUE;
+	ELSE
+	    #failure.aux[4] := FALSE;
+	END_IF;
+	
+	IF #failure.aux[3] OR #failure.aux[4] THEN
+	    #failure.aux[5] := TRUE;
+	ELSE
+	    #failure.aux[5] := FALSE;
+	END_IF;
+	
+	IF #failure.aux[5] THEN
+	    #failure.timeOfFailure(IN := TRUE,
+	                           PT := #failure.setDelay + 1);
+	ELSE
+	    #failure.timeOfFailure(IN := FALSE,
+	                           PT := #failure.setDelay + 1);
+	END_IF;
+	
+	IF #failure.timeOfFailure.Q THEN
+	    #failure.getFailureDetected := TRUE;
+	END_IF;
+	
+END_FUNCTION
+

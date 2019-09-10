@@ -1,0 +1,180 @@
+﻿FUNCTION "fSina_1" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      sina : "tDevSina";
+   END_VAR
+
+   VAR CONSTANT 
+      equipment : DInt := 1101;
+      control : DInt := 1;
+   END_VAR
+
+
+BEGIN
+	//#sina :=
+	//"dDoor[1..4]".door[1].control.motor[1].outputMotorDrive.sina;
+	
+	//=============================================================================
+	//SIEMENS AG
+	//(c)Copyright 2017 All Rights Reserved
+	//-----------------------------------------------------------------------------
+	// Library: DriveLib
+	// Tested with: S7-1516-3 PN/DP V1.8
+	// Engineering: TIA Portal V14
+	// Restrictions: -
+	// Requirements: S7-1200 / S7-1500
+	// Functionality: cyclic communication between a SINAMICS a PLC.
+	//                If in HWConfig Std.TLG 1 is projected 2 PZD-words are exchanged
+	//                in every bus cycle.
+	//                The parametrisation of these words is described in the manual of the
+	//                SINAMICS
+	//=============================================================================
+	
+	// Schreibdaten zusammenstellen
+	// Steuerword aufbereiten
+	
+	#sina.sxSendBuf.STW1.%X0 := #sina.EnableAxis;
+	#sina.sxSendBuf.STW1.%X1 := #sina.ConfigAxis.%X0;
+	#sina.sxSendBuf.STW1.%X2 := #sina.ConfigAxis.%X1;
+	#sina.sxSendBuf.STW1.%X3 := #sina.ConfigAxis.%X2;
+	#sina.sxSendBuf.STW1.%X4 := #sina.ConfigAxis.%X3;
+	#sina.sxSendBuf.STW1.%X5 := #sina.ConfigAxis.%X4;
+	#sina.sxSendBuf.STW1.%X6 := #sina.ConfigAxis.%X5;
+	#sina.sxSendBuf.STW1.%X10 := TRUE;
+	#sina.sxSendBuf.STW1.%X11 := #sina.ConfigAxis.%X6;
+	#sina.sxSendBuf.STW1.%X7 := #sina.AckError;
+	
+	// Geschwindigkeit
+	IF #sina.RefSpeed <> 0 THEN
+	    #sina.prVelocity := #sina.SpeedSp * (16384.0 / #sina.RefSpeed);
+	    // Limit REAL - Variable to INT - Limits
+	    IF #sina.prVelocity > 32767 THEN
+	        #sina.prVelocity := 32767;
+	    ELSIF #sina.prVelocity < -32768 THEN
+	        #sina.prVelocity := -32768;
+	    ELSE
+	        ; // not needed
+	    END_IF;
+	    #sina.sxSendBuf.Velocity := INT_TO_WORD(REAL_TO_INT(#sina.prVelocity));
+	    
+	ELSE
+	    #sina.sxSendBuf.Velocity := W#16#0;
+	END_IF;
+	#sina.swSendBuf[0] := #sina.sxSendBuf.STW1;
+	#sina.swSendBuf[1] := #sina.sxSendBuf.Velocity;
+	
+	//Prozessdaten zur Signalbaugruppe schreiben
+	#sina.piRetSFC := DPWR_DAT(LADDR := #sina.HWIDSTW,
+	                           RECORD := #sina.swSendBuf);
+	
+	// Fehler der RÃ¼ckmeldung ausgeben
+	#sina.DiagId := INT_TO_WORD(#sina.piRetSFC);
+	
+	//kein Fehler beim Schreiben
+	IF #sina.piRetSFC = 0 THEN
+	    
+	    //kein Fehler beim Schreiben
+	    IF #sina.piRetSFC = 0 THEN
+	        
+	        //Prozessdaten von der Signalbaugruppe lesen
+	        #sina.piRetSFC := DPRD_DAT(LADDR := #sina.HWIDZSW,
+	                                   RECORD => #sina.swRecvBuf);
+	        
+	        // Fehler der RÃ¼ckmeldung ausgeben
+	        #sina.DiagId := INT_TO_WORD(#sina.piRetSFC);
+	    END_IF;
+	    
+	    //Fehler beim Lesen (Profibus-Kommunikation unterbrochen)
+	    IF #sina.piRetSFC <> 0 THEN
+	        
+	        // Fehler
+	        #sina.Error := TRUE;
+	        #sina.Status := 16#8600;
+	        
+	        // Zustandsworte lÃ¶schen
+	        #sina.sxRecvBuf.ZSW1.%X8 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X9 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X10 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X11 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X12 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X13 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X14 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X15 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X0 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X1 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X2 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X3 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X4 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X5 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X6 := 0;
+	        #sina.sxRecvBuf.ZSW1.%X7 := 0;
+	        
+	        
+	        (*#sina.sxRecvBuf.sxZSW1.SpDev   := 0;
+	        #sina.sxRecvBuf.sxZSW1.Pcd     := 0;
+	        #sina.sxRecvBuf.sxZSW1.Comp    := 0;
+	        #sina.sxRecvBuf.sxZSW1.CurLim  := 0;
+	        #sina.sxRecvBuf.sxZSW1.Brake   := 0;
+	        #sina.sxRecvBuf.sxZSW1.Motover := 0;
+	        #sina.sxRecvBuf.sxZSW1.Dir     := 0;
+	        #sina.sxRecvBuf.sxZSW1.Invover := 0;
+	        #sina.sxRecvBuf.sxZSW1.Rts     := 0;
+	        #sina.sxRecvBuf.sxZSW1.Rdy     := 0;
+	        #sina.sxRecvBuf.sxZSW1.IOp     := 0;
+	        #sina.sxRecvBuf.sxZSW1.Fault   := 0;
+	        #sina.sxRecvBuf.sxZSW1.NoOff2  := 0;
+	        #sina.sxRecvBuf.sxZSW1.NoOff3  := 0;
+	        #sina.sxRecvBuf.sxZSW1.Inhibit := 0;
+	        #sina.sxRecvBuf.sxZSW1.Alarm   := 0;*)
+	        
+	        #sina.sxRecvBuf.Velocity := W#16#00;
+	        
+	        // Werte auslesen
+	    ELSE
+	        #sina.sxRecvBuf.ZSW1 := #sina.swRecvBuf[0];
+	        #sina.sxRecvBuf.Velocity := #sina.swRecvBuf[1];
+	        
+	        // ZSW1 aufbereiten                       
+	        #sina.AxisEnabled := #sina.sxRecvBuf.ZSW1.%X2;
+	        #sina.Error := #sina.sxRecvBuf.ZSW1.%X3 OR #sina.sxRecvBuf.ZSW1.%X6;
+	        #sina.Lockout := #sina.sxRecvBuf.ZSW1.%X6;
+	        
+	        // Fehler auswerten
+	        IF #sina.sxRecvBuf.ZSW1.%X3 THEN
+	            #sina.Status := 16#8401;
+	        ELSIF #sina.sxRecvBuf.ZSW1.%X6 THEN
+	            #sina.Status := 16#8402;
+	        ELSE
+	            #sina.Status := 16#7002;
+	        END_IF;
+	        
+	        (*#sina.Busy       := #sina.sxRecvBuf.sxZSW1.IOp;
+	        #sina.Error      := #sina.sxRecvBuf.sxZSW1.Fault OR #sina.sxRecvBuf.sxZSW1.Inhibit;
+	        #sina.PwrInhibit := #sina.sxRecvBuf.sxZSW1.Inhibit;            
+	    
+	        // Fehler auswerten
+	        IF #sina.sxRecvBuf.sxZSW1.Fault THEN
+	            #sina.ErrorId := 1;
+	        ELSIF #sina.sxRecvBuf.sxZSW1.Inhibit THEN 
+	            #sina.ErrorId := 2;
+	        ELSE
+	            #sina.ErrorId := 0;    
+	        END_IF;*)
+	        
+	        // Geschwindigkeit
+	        IF #sina.RefSpeed <> 0 THEN
+	            #sina.ActVelocity := INT_TO_REAL(WORD_TO_INT(#sina.sxRecvBuf.Velocity)) / (16384.0 / #sina.RefSpeed);
+	        ELSE
+	            #sina.ActVelocity := 0.0;
+	        END_IF;
+	    END_IF;
+	ELSE
+	    
+	    // Fehler
+	    #sina.Error := TRUE;
+	    #sina.Status := 16#8601;
+	    
+	END_IF;
+END_FUNCTION
+

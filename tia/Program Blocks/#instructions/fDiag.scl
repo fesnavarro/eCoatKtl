@@ -1,0 +1,15 @@
+﻿FUNCTION "fDiag" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      tdiag : "tDiag";
+   END_VAR
+
+
+BEGIN
+	#tdiag._int := 
+	ModuleStates(LADDR := #tdiag._laddr,
+	             MODE := #tdiag.mode,
+	             STATE := #tdiag.state);
+END_FUNCTION
+

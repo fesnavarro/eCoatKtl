@@ -1,0 +1,22 @@
+﻿TYPE "tControl"
+TITLE = tMotor
+VERSION : 0.8
+//Motor data type structure
+   STRUCT
+      parent : Int;
+      id : Int;
+      index : "tIndex";
+      autoMan : "tAutoMan";
+      autoRun : "tAutoRun";
+      inputMotorDrive : "tInputMotorDrive";
+      inputValve : "tInputValve";
+      command : "tCommand";
+      power : "tPower";
+      outputMotorDrive : "tOutputMotorDrive";
+      outputValve : "tOutputValve";
+      selectedByInterface : Int;
+      noRunning : Bool;
+   END_STRUCT;
+
+END_TYPE
+

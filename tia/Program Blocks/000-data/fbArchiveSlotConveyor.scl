@@ -1,0 +1,13 @@
+﻿FUNCTION_BLOCK "fbArchiveSlotConveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      slotConveyor : Array[1..6] of Struct
+         slot : Array[1..8] of "tSlot";
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

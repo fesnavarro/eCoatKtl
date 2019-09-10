@@ -1,0 +1,17 @@
+﻿TYPE "tRecipes"
+VERSION : 0.8
+   STRUCT
+      description : String[40];
+      timeOfTreatment : Array[-2..40] of Int;
+      timeWaiting : Array[-2..40] of Int;
+      enable : Array[-2..40] of Bool;
+      rectifier : Struct
+         setDelayRamp : Array[0..5] of Int;
+         setDelayTime : Array[0..5] of Int;
+         setVoltage : Array[0..5] of Int;
+         qtyOfStages : Int;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+

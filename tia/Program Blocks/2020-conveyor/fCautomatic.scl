@@ -1,0 +1,277 @@
+﻿FUNCTION "fCautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      autoConveyor : REF_TO "tAutoConveyor";
+      actual : REF_TO "tActual";
+      control : REF_TO "tControl";
+      slot : REF_TO "tSlot";
+      slotF : REF_TO "tSlot";
+      slotB : REF_TO "tSlot";
+      info : REF_TO "tInfoControl";
+      data : REF_TO "tData";
+      controlB : REF_TO "tControl";
+      i : Int;
+      autoConveyorF : REF_TO "tAutoConveyor";
+      autoConveyorB : REF_TO "tAutoConveyor";
+      id : Int;
+      slot1 : REF_TO "tSlot";
+      slot2 : REF_TO "tSlot";
+      slot3 : REF_TO "tSlot";
+      slot4 : REF_TO "tSlot";
+      slot5 : REF_TO "tSlot";
+      slot6 : REF_TO "tSlot";
+      slot7 : REF_TO "tSlot";
+      slot8 : REF_TO "tSlot";
+      tempBool : Bool;
+      ia : Int;
+      controlF : REF_TO "tControl";
+      ie : Int;
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	
+	#setAutoForward := FALSE;
+	CASE #index.pathParent OF
+	    1..6:
+	        CASE #index.acc OF
+	            1:
+	                REGION forward
+	                    #autoConveyor^.standard.forward := FALSE;
+	                    #autoConveyor^.standard.on := FALSE;
+	                    FOR #ia := 1 TO 8 DO
+	                        //rollingIn
+	                        IF #index.pathParent >= 3 THEN
+	                            #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#ia]);
+	                            IF #slot^.info.data.getDataReady AND
+	                                NOT #slot^.info.data.getOccupied THEN
+	                                #autoConveyor^.standard.on := TRUE;
+	                            END_IF;
+	                        END_IF;
+	                        //rollingOut
+	                        IF #index.pathParent <= 5 THEN
+	                            #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#ia]);
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                            IF NOT #slot^.info.data.getOccupied AND
+	                                #slotF^.info.data.getDataReady AND
+	                                NOT #slotF^.info.data.getOccupied THEN
+	                                #autoConveyor^.standard.on := TRUE;
+	                            END_IF;
+	                        END_IF;
+	                    END_FOR;
+	                    FOR #ia := 1 TO 8 DO
+	                        //notReady
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[#ia]);
+	                        IF #slot^.info.data.getOccupied THEN
+	                            #autoConveyor^.standard.on := FALSE;
+	                        END_IF;
+	                    END_FOR;
+	                    #autoConveyor^.standard.status[1].setConfig := 0;
+	                    #autoConveyor^.standard.status[1].setDelayUp := 2000;
+	                    #autoConveyor^.standard.status[1].setDelayDown := 500;
+	                    #autoConveyor^.standard.status[1].setSignal := #autoConveyor^.standard.on;
+	                    "fStatus"(#autoConveyor^.standard.status[1]);
+	                    #autoConveyor^.standard.forward := #autoConveyor^.standard.status[1].getStatus;
+	                    
+	                    #setAutoForward := #autoConveyor^.standard.forward;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    2:
+	        CASE #index.acc OF
+	            1:
+	                REGION powerWaiting
+	                    #autoConveyor^.standard.lowPower := FALSE;
+	                    #autoConveyor^.standard.averagePower := FALSE;
+	                    //sending
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                    IF #slotF^.info.data.getDataReady AND
+	                        NOT #slotF^.info.data.getOccupied AND
+	                        (NOT #controlF^.command.getTurnOnForward OR
+	                        #controlF^.power.setLow) THEN
+	                        #autoConveyor^.standard.lowPower := TRUE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    3:
+	        CASE #index.acc OF
+	            1:
+	                REGION powerWaiting
+	                    #autoConveyor^.standard.lowPower := FALSE;
+	                    #autoConveyor^.standard.averagePower := FALSE;
+	                    //receiving
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent - 1].slot[1]);
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlB := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent - 1].control[1]);
+	                    #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                    IF NOT #slotB^.info.data.getOccupied AND
+	                        #slot^.info.data.getDataReady AND
+	                        NOT #slot^.info.data.getOccupied AND
+	                        (NOT #controlB^.command.getTurnOnForward OR
+	                        #controlB^.power.setAverage) THEN
+	                        #autoConveyor^.standard.averagePower := TRUE;
+	                    END_IF;
+	                    //sending
+	                    IF #slotF^.info.data.getDataReady AND
+	                        NOT #slotF^.info.data.getOccupied AND
+	                        (NOT #controlF^.command.getTurnOnForward OR
+	                        #controlF^.power.setLow) THEN
+	                        #autoConveyor^.standard.lowPower := TRUE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    4:
+	        CASE #index.acc OF
+	            1:
+	                REGION powerWaiting
+	                    #autoConveyor^.standard.lowPower := FALSE;
+	                    #autoConveyor^.standard.averagePower := FALSE;
+	                    //receiving
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent - 1].slot[6]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlB := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent - 1].control[1]);
+	                    IF #slot^.info.data.getDataReady AND
+	                        NOT #slot^.info.data.getOccupied AND
+	                        (NOT #controlB^.command.getTurnOnForward OR
+	                        #controlB^.power.setAverage) THEN
+	                        IF #actual^.returnedADoor[2].signal AND
+	                            #actual^.returnedBDoor[2].signal THEN
+	                            ;
+	                        ELSE
+	                            #autoConveyor^.standard.averagePower := TRUE;
+	                        END_IF;
+	                    END_IF;
+	                    //sending
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[4]);
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                    IF #slotF^.info.data.getDataReady AND
+	                        NOT #slotF^.info.data.getOccupied AND
+	                        (NOT #controlF^.command.getTurnOnForward OR
+	                        #controlF^.power.setLow) THEN
+	                        #autoConveyor^.standard.lowPower := TRUE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    5:
+	        CASE #index.acc OF
+	            1:
+	                REGION powerWaiting
+	                    #autoConveyor^.standard.lowPower := FALSE;
+	                    #autoConveyor^.standard.averagePower := FALSE;
+	                    //receiving
+	                    (*
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent - 1].slot[4]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlB := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent - 1].control[1]);
+	                    IF NOT #slotB^.info.data.getOccupied AND
+	                        #slot^.info.data.getDataReady AND
+	                        NOT #slot^.info.data.getOccupied AND
+	                        (NOT #controlB^.command.getTurnOnForward OR
+	                        #controlB^.power.setAverage) THEN
+	                        #autoConveyor^.standard.averagePower := TRUE;
+	                    END_IF;
+	                    *)
+	                    //sending
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                    IF #slotF^.info.data.getDataReady AND
+	                        NOT #slotF^.info.data.getOccupied AND
+	                        (NOT #controlF^.command.getTurnOnForward OR
+	                        #controlF^.power.setLow) THEN
+	                        #autoConveyor^.standard.lowPower := TRUE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE; 
+	    6:
+	        CASE #index.acc OF
+	            1:
+	                REGION powerWaiting
+	                    #autoConveyor^.standard.lowPower := FALSE;
+	                    #autoConveyor^.standard.averagePower := FALSE;
+	                    //receiving
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotB := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent - 1].slot[1]);
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[1]);
+	                    #controlB := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent - 1].control[1]);
+	                    IF NOT #slotB^.info.data.getOccupied AND
+	                        #slot^.info.data.getDataReady AND
+	                        NOT #slot^.info.data.getOccupied AND
+	                        (NOT #controlB^.command.getTurnOnForward OR
+	                        #controlB^.power.setAverage) THEN
+	                        #autoConveyor^.standard.averagePower := TRUE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    2:
+	        CASE #index.acc OF
+	            2:
+	                REGION movingLift
+	                    #control := REF("dbArchiveControlConveyor".controlConveyor[1].control[#index.acc]);
+	                    #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                    #slotF := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent + 1].slot[1]);
+	                    IF NOT #slot^.info.data.getOccupied AND
+	                        #slotF^.info.data.getDataReady AND
+	                        NOT #slotF^.info.data.getOccupied THEN
+	                        #autoConveyor^.standard.up := TRUE;
+	                        #autoConveyor^.standard.down := FALSE;
+	                    ELSE
+	                        #autoConveyor^.standard.up := FALSE;
+	                        #autoConveyor^.standard.down := TRUE;
+	                    END_IF;
+	                    
+	                    IF #control^.inputValve.getAdvanced THEN
+	                        #autoConveyor^.standard.up := FALSE;
+	                    END_IF;
+	                    #setAutoForward := #autoConveyor^.standard.up;
+	                    
+	                    IF #control^.inputValve.getReturned THEN
+	                        #autoConveyor^.standard.down := FALSE;
+	                    END_IF;
+	                    #setAutoReturn := #autoConveyor^.standard.down;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	REGION clearAll
+	    CASE #index.pathParent (*parent*)OF
+	        1..6://
+	            CASE #index.acc (*control*)OF
+	                1..2://
+	                    IF NOT #autoRunEnable THEN
+	                        #setAutoForward := FALSE;
+	                        #setAutoReturn := FALSE;
+	                        #autoConveyor^.standard.highPower := FALSE;
+	                        #autoConveyor^.standard.averagePower := FALSE;
+	                        #autoConveyor^.standard.lowPower := FALSE;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+END_FUNCTION
+

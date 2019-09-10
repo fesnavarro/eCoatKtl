@@ -1,0 +1,640 @@
+﻿FUNCTION "fCcontrol" : Void
+TITLE = fCmotor
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : Conveyor
+NAME : '2030'
+VERSION : 0.8
+//function for motor parameter
+   VAR_INPUT 
+      location : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      parConveyor : REF_TO "tParameterConveyor";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      parent : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      autoEom : REF_TO "tAutoEom";
+      controlDoor : REF_TO "tControl";
+      slotF : REF_TO "tSlot";
+      slot : REF_TO "tSlot";
+      controlF : REF_TO "tControl";
+      lift : REF_TO "tControl";
+      controlEom : REF_TO "tControl";
+      controlB : REF_TO "tControl";
+      slotB : REF_TO "tSlot";
+      autoConveyor : REF_TO "tAutoConveyor";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parConveyor := REF("dbArchiveParConveyor".parConveyor[#index.pathParent]);
+	#parent := REF("dbArchiveEquipConveyor".equipmentConveyor[#index.pathParent]);
+	#control := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[#index.acc]);
+	
+	#control^.selectedByInterface := 0;
+	REGION interface selected
+	    FOR #i := 1 TO 6 DO
+	        IF #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) AND
+	            #index.acc = "dbInterface".interface[#i].controlId THEN
+	            #control^.selectedByInterface := #i;
+	            "dbInterface".interface[#i].auxStatus[2].setSignal := TRUE;
+	            "fStatus"("dbInterface".interface[#i].auxStatus[2]);
+	        ELSIF #i >= 5 AND
+	            #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) THEN
+	            #control^.selectedByInterface := #i;
+	        END_IF;
+	    END_FOR;
+	END_REGION
+	
+	REGION automatic or manual
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..6:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.autoMan.setDelayOfAuto := 50;
+	                        #control^.autoMan.setDelayOfManual := 50;
+	                        #control^.autoMan.setPulseSelAutoMan :=
+	                        "dbInterface".interface[#control^.selectedByInterface].autoMan.setPulseSelAutoMan;
+	                        "dbInterface".interface[#control^.selectedByInterface].autoMan.getStsManual :=
+	                        #control^.autoMan.getStsManual;
+	                        #control^.autoMan.setSelAuto := #parent^.autoMan.getStsAuto;
+	                        #control^.autoMan.setSelManual := NOT #parent^.autoMan.getStsManual;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoMan"(#control^.autoMan);
+	    END_REGION
+	END_REGION
+	
+	REGION automatic and running
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..6:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.autoRun.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.autoRun.setDelayTurnOff := 50;
+	                        #control^.autoRun.setDelayTurnOn := 50;
+	                        #control^.autoRun.setPulseSelAutoRun :=
+	                        "dbInterface".interface[#control^.selectedByInterface].autoRun.setPulseSelAutoRun;
+	                        #control^.autoRun.setSelTurnOn := #parent^.autoRun.getStsAutoRun;
+	                        #control^.autoRun.setSelTurnOff := NOT #parent^.autoRun.getStsAutoRun;
+	                        #control^.autoRun.setStsAuto :=
+	                        #control^.autoMan.getStsAuto;
+	                        "dbInterface".interface[#control^.selectedByInterface].autoRun.getStsAutoRun :=
+	                        #control^.autoRun.getStsAutoRun;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoRun"(#control^.autoRun);
+	    END_REGION
+	END_REGION
+	
+	REGION inputs from activation
+	    REGION parameters
+	        CASE #index.pathParent (*equipment number*)OF
+	            1..6:
+	                CASE #index.acc (*control number*)OF
+	                    1:
+	                        //set
+	                        #control^.inputMotorDrive.setFailureDetected :=
+	                        #control^.outputMotorDrive.sina.Error;
+	                        // := #motor.outputInversor.sina.#Status;
+	                        // := #motor.outputInversor.sina.DiagId;
+	                        #control^.inputMotorDrive.setDelayActive := 500;
+	                        #control^.inputMotorDrive.setDelayFailure := 500;
+	                        #control^.inputMotorDrive.setDelayForward := 500;
+	                        #control^.inputMotorDrive.setDelayReturn := 500;
+	                        #control^.inputMotorDrive.setDelayReady := 500;
+	                        #control^.inputMotorDrive.setActive := #control^.outputMotorDrive.sina.AxisEnabled;
+	                        //#motor.inputInversor.setForwardSignal := FALSE;// (*variableFrom*);
+	                        //#motor.inputInversor.setReturnSignal := FALSE;// (*variableFrom*);
+	                        #control^.inputMotorDrive.setReady := NOT #control^.outputMotorDrive.sina.Lockout;
+	                        #control^.inputMotorDrive.setSpeed := REAL_TO_DINT(#control^.outputMotorDrive.sina.ActVelocity);
+	                        #actual^.inversorFailureDetectedConveyor[#index.pathParent].signal :=
+	                        #control^.inputMotorDrive.getFailureDetected;
+	                    2:
+	                        #control^.inputValve.setDelayOfAdvanced := 0;
+	                        #control^.inputValve.setDelayOfReturned := 0;
+	                        #control^.inputValve.setMagneticA1 := "=ecoat-42S3:3";
+	                        #control^.inputValve.setMagneticA2 := "=ecoat-42S3:3";
+	                        #control^.inputValve.setMagneticB1 := "=ecoat-42S2:3";
+	                        #control^.inputValve.setMagneticB2 := "=ecoat-42S2:3";
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fInputMotorDrive"(#control^.inputMotorDrive);
+	        "fInputValve"(#control^.inputValve);
+	    END_REGION
+	END_REGION
+	
+	REGION command
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..6:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.command.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        "fCautomatic"(index := #index,
+	                                      autoRunEnable := #control^.autoRun.getStsAutoRun,
+	                                      setAutoForward => #control^.command.setAutoForward,
+	                                      setAutoReturn => #control^.command.setAutoReturn);
+	                        
+	                        #control^.command.setRetentionManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setRetentionManForward;
+	                        
+	                        #control^.command.setRetentionManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setRetentionManReturn;
+	                        
+	                        #control^.command.setStsManual := #control^.autoMan.getStsManual;
+	                        #control^.command.setStsAutoRun := #control^.autoRun.getStsAutoRun;
+	                        
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getRetentionManForward :=
+	                        #control^.command.getRetentionManForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getRetentionManReturn :=
+	                        #control^.command.getRetentionManReturn;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getTurnOnForward :=
+	                        #control^.command.getTurnOnForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getTurnOnReturn :=
+	                        #control^.command.getTurnOnReturn;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getConditionForward :=
+	                        #control^.command.getConditionForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getConditionReturn :=
+	                        #control^.command.getConditionReturn;
+	                        REGION releaseRetention
+	                            IF #control^.selectedByInterface = 5 THEN
+	                                #control^.command.aux[10] := FALSE;
+	                                #control^.command.aux[11] := FALSE;
+	                            END_IF;
+	                        END_REGION
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            1:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #autoEom := REF("dbArchiveAutoEom".autoEom[4]);
+	                        
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        IF #autoEom^.translationPosition >= 17.1 THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF (#actual^.skidDetectedAConveyor[#index.pathParent+1].signal OR
+	                            #actual^.skidDetectedBConveyor[#index.pathParent+1].signal) THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF (NOT #actual^.returnedConveyor[#index.pathParent + 1].signal OR
+	                            NOT #actual^.returnedConveyor[#index.pathParent + 1].signal) THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	
+	                        
+	                        #control^.command.setIntertwatingReturn := FALSE;
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	            2:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        IF NOT #actual^.advancedConveyor[#index.pathParent].signal THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                        #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent+1].control[1]);
+	                        IF #slot^.delivering AND NOT #controlF^.command.getTurnOnForward THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF #control^.autoMan.getStsManual THEN
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                        END_IF;
+	                        
+	                        #lift := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent].control[2]);
+	                        IF NOT #lift^.inputValve.getAdvanced THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	
+	                        #control^.command.setIntertwatingReturn := FALSE;
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                    2:
+	                        #control^.command.setIntertwatingForward :=
+	                        #control^.inputValve.getAdvanced;
+	                        
+	                        #control^.command.setIntertwatingReturn := FALSE;
+	                        IF #control^.inputValve.getReturned THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        
+	                        IF #actual^.skidDetectedAConveyor[3].signal THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.upArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.downArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	            3:
+	                #controlDoor := REF("dbArchiveControlDoor".controlDoor[1].control[1]);
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        
+	                        IF (NOT #actual^.returnedADoor[1].signal OR
+	                            NOT #actual^.returnedBDoor[1].signal) AND
+	                            (#actual^.skidDetectedDConveyor[#index.pathParent].signal OR
+	                            #actual^.skidDetectedEConveyor[#index.pathParent].signal) THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF (NOT #actual^.returnedADoor[2].signal OR
+	                            NOT #actual^.returnedBDoor[2].signal) AND
+	                            #actual^.skidDetectedFConveyor[#index.pathParent].signal THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[6]);
+	                        #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                        IF #slot^.delivering AND NOT #controlF^.command.getTurnOnForward THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	
+	                        #control^.command.setIntertwatingReturn :=
+	                        FALSE;
+	                        
+	                        IF (NOT #actual^.returnedADoor[1].signal OR
+	                            NOT #actual^.returnedBDoor[1].signal) AND
+	                            (#actual^.skidDetectedDConveyor[#index.pathParent].signal OR
+	                            #actual^.skidDetectedEConveyor[#index.pathParent].signal) THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        (*
+	                        IF (NOT #actual^.returnedADoor[2].signal OR
+	                            NOT #actual^.returnedBDoor[2].signal) AND
+	                            #actual^.skidDetectedFConveyor[#index.pathParent].signal THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;*)
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	            4:
+	                #controlDoor := REF("dbArchiveControlDoor".controlDoor[1].control[1]);
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[4]);
+	                        #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                        IF #slot^.delivering AND NOT #controlF^.command.getTurnOnForward THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF #control^.autoMan.getStsManual THEN
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                        END_IF;
+	                        
+	                        IF (NOT #actual^.returnedADoor[3].signal OR
+	                            NOT #actual^.returnedBDoor[3].signal) AND
+	                            (#actual^.skidDetectedAConveyor[#index.pathParent].signal) THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setIntertwatingReturn := FALSE;
+	                        
+	                        IF (NOT #actual^.returnedADoor[2].signal OR
+	                            NOT #actual^.returnedBDoor[2].signal) THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	            5:
+	                #controlDoor := REF("dbArchiveControlDoor".controlDoor[1].control[1]);
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[1]);
+	                        #controlF := REF("dbArchiveControlConveyor".controlConveyor[#index.pathParent + 1].control[1]);
+	                        IF #slot^.delivering AND NOT #controlF^.command.getTurnOnForward THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF #control^.autoMan.getStsManual THEN
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                        END_IF;
+	                        
+	                        IF (NOT #actual^.returnedADoor[4].signal OR
+	                            NOT #actual^.returnedBDoor[4].signal) AND
+	                            (#actual^.skidDetectedAConveyor[#index.pathParent].signal OR
+	                            #actual^.skidDetectedAConveyor[#index.pathParent + 1].signal) THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setIntertwatingReturn :=
+	                        FALSE;
+	                        
+	                        IF (NOT #actual^.returnedADoor[4].signal OR
+	                            NOT #actual^.returnedBDoor[4].signal) AND
+	                            (#actual^.skidDetectedAConveyor[#index.pathParent].signal OR
+	                            #actual^.skidDetectedAConveyor[#index.pathParent + 1].signal) THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        
+	                        IF (NOT #actual^.returnedADoor[3].signal OR
+	                            NOT #actual^.returnedBDoor[3].signal) THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	            6:
+	                #controlDoor := REF("dbArchiveControlDoor".controlDoor[1].control[1]);
+	                #autoEom := REF("dbArchiveAutoEom".autoEom[5]);
+	                #slotF := REF("dbArchiveSlotEom".slotEom[5].slot[1]);
+	                #controlEom := REF("dbArchiveControlEom".controlEom[5].control[1]);
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.command.setIntertwatingForward := FALSE;
+	                        
+	                        #slot := REF("dbArchiveSlotConveyor".slotConveyor[#index.pathParent].slot[8]);
+	                        IF #slot^.delivering THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        IF #control^.autoMan.getStsManual THEN
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                        END_IF;
+	                        
+	                        IF #autoEom^.translationPosition <= 38.9 AND
+	                            #slotF^.info.data.getDataReady THEN
+	                            IF #autoEom^.translationPosition >= 38.1 AND
+	                                #controlEom^.command.getTurnOnForward THEN
+	                                ;
+	                            ELSE
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_IF;
+	                        
+	                        #slotF := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[8]);
+	                        IF (#actual^.skidDetectedBConveyor[#index.pathParent].signal AND
+	                            #actual^.skidDetectedCConveyor[#index.pathParent].signal) AND
+	                            #slotF^.info.data.getOccupied THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setIntertwatingReturn := FALSE;
+	                        
+	                        IF (NOT #actual^.returnedADoor[4].signal OR
+	                            NOT #actual^.returnedBDoor[4].signal) AND
+	                            #actual^.skidDetectedBConveyor[#index.pathParent-1].signal THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fCommand"(#control^.command);
+	    END_REGION
+	END_REGION
+	
+	REGION power
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.power.setLow := FALSE;
+	                        #control^.power.setAverage := FALSE;
+	                        #control^.power.setHigh := TRUE;
+	                        #control^.power.setSpeedLow := 0;
+	                        #control^.power.setSpeedAverage := 1800;
+	                        #control^.power.setSpeedHigh := 1800;
+	                END_CASE;
+	            2..4:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	                        #control^.power.setLow := #autoConveyor^.standard.lowPower;
+	                        #control^.power.setAverage := #autoConveyor^.standard.averagePower;
+	                        #control^.power.setHigh := NOT #autoConveyor^.standard.averagePower;
+	                        #control^.power.setSpeedLow := 0;
+	                        #control^.power.setSpeedAverage := 0;
+	                        #control^.power.setSpeedHigh := 1100;
+	                END_CASE;
+	            5..6:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[#index.pathParent]);
+	                        #control^.power.setLow := #autoConveyor^.standard.lowPower;
+	                        #control^.power.setAverage := #autoConveyor^.standard.averagePower;
+	                        #control^.power.setHigh := NOT #autoConveyor^.standard.averagePower;
+	                        #control^.power.setSpeedLow := 0;
+	                        #control^.power.setSpeedAverage := 0;
+	                        #control^.power.setSpeedHigh := 1700;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fPower"(#control^.power);
+	    END_REGION
+	END_REGION
+	
+	REGION output to activation
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..6:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        //set
+	                        #control^.outputMotorDrive.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.outputMotorDrive.setForward :=
+	                        #control^.command.getTurnOnForward;
+	                        #control^.outputMotorDrive.setReturn :=
+	                        #control^.command.getTurnOnReturn;
+	                        #control^.outputMotorDrive.setSpeed :=
+	                        #control^.power.getSpeed;
+	                        #control^.outputMotorDrive.setResetFailure :=
+	                        #actual^.generalResetFailure.signal;
+	                        //get
+	                        #control^.outputMotorDrive.sina.ConfigAxis := 16#0003F;
+	                        #control^.outputMotorDrive.sina.ConfigAxis.%X5 :=
+	                        NOT #control^.outputMotorDrive.getStop;
+	                        #control^.outputMotorDrive.sina.ConfigAxis.%X6 :=
+	                        NOT #control^.outputMotorDrive.getReturn; 
+	                        #control^.outputMotorDrive.sina.AckError :=
+	                        #control^.outputMotorDrive.getResetFailure;
+	                        #control^.outputMotorDrive.sina.EnableAxis :=
+	                        #control^.outputMotorDrive.getStart;
+	                        #control^.outputMotorDrive.sina.SpeedSp :=
+	                        #control^.outputMotorDrive.getSpeed;
+	                        #control^.outputMotorDrive.sina.RefSpeed := 1800;
+	                    2:
+	                        #control^.outputValve.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.outputValve.setDelayAdvance := 500;
+	                        #control^.outputValve.setDelayOfReturn := 500;
+	                        #control^.outputValve.setAdvance :=
+	                        #control^.command.getTurnOnForward;
+	                        #control^.outputValve.setReturn :=
+	                        #control^.command.getTurnOnReturn;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            1:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "ecoat10v1~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "ecoat10v1~PROFINET_interface~Standard_telegram_1";
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            2:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "ecoat10v2~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "ecoat10v2~PROFINET_interface~Standard_telegram_1";
+	                    2:
+	                        //get
+	                        #action^.liftingTableAdvance[#index.pathParent].signal :=
+	                        #control^.outputValve.getAdvance;
+	                        #action^.liftingTableReturn[#index.pathParent].signal  :=
+	                        #control^.outputValve.getReturn;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            3:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "oven11v1~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "oven11v1~PROFINET_interface~Standard_telegram_1";
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            4:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "oven11v2~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "oven11v2~PROFINET_interface~Standard_telegram_1";
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            5:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "oven12v1~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "oven12v1~PROFINET_interface~Standard_telegram_1";
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            6:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        #control^.outputMotorDrive.sina.HWIDSTW :=
+	                        "pre24V1~PROFINET_interface~Standard_telegram_1";
+	                        #control^.outputMotorDrive.sina.HWIDZSW :=
+	                        "pre24V1~PROFINET_interface~Standard_telegram_1";
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fOutputMotorDrive"(#control^.outputMotorDrive);
+	        "fOutputValve"(#control^.outputValve);
+	        "fSina"(#control^.outputMotorDrive.sina);
+	    END_REGION
+	END_REGION
+END_FUNCTION
+

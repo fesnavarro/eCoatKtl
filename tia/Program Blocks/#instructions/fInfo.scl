@@ -1,0 +1,121 @@
+﻿FUNCTION "fInfo" : Void
+TITLE = fInfo
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '504'
+VERSION : 0.8
+//Function to distribute information
+   VAR_IN_OUT
+      send : "tData";
+      receive : "tData";
+      info : "tInfoControl";
+   END_VAR
+
+   VAR_TEMP
+      i : Int;
+      clearData : "tData";
+      setTimeOutReceive : Int;
+      setTimeOutSend : Int;
+      skid : REF_TO "tSkid";
+   END_VAR
+
+
+BEGIN
+	#setTimeOutSend := 1000;
+	#setTimeOutReceive := 1000;
+
+	#info.timeout.setConfig := 2;
+	#info.timeout.setDelayUp := 250;
+	#info.timeout.setDelayDown := 250;
+	#info.timeout.setSignal := NOT #info.setReset AND #info.setEnable;
+	"fStatus"(#info.timeout);
+
+	//Line 1-----------------------------------------------
+	IF (#info.setEnable AND (NOT #send.flag)) THEN
+	    #send.posFlag := TRUE;
+	ELSE
+	    #send.posFlag := FALSE;
+	END_IF;
+
+	//Line 2-----------------------------------------------
+	IF ((NOT #info.setEnable) AND #send.flag) THEN
+	    #send.negFlag := TRUE;
+	ELSE
+	    #send.negFlag := FALSE;
+	END_IF;
+
+	//Line 3-----------------------------------------------
+	IF #info.setEnable THEN
+	    #send.flag := TRUE;
+	    #send.flagMotion := TRUE;
+	ELSE
+	    #send.flag := FALSE;
+	    #send.flagMotion := FALSE;
+	END_IF;
+
+	IF #info.setEnable AND #send.posFlag THEN
+	    #send.getOccupied := FALSE;
+	END_IF;
+
+	//Line 4-----------------------------------------------
+	IF (#send.posFlag OR #send.negFlag OR
+	    ((#info.setReset) AND #send.workMem[1].%X4)) THEN
+	    #send.workMem[3] := 0;
+	    #send.timeoutFailure := FALSE;
+	END_IF;
+
+	//Line 5-----------------------------------------------
+
+	IF (#send.flagMotion OR #send.noRunning) AND
+	    #info.timeout.getStatus AND
+	    (NOT #send.getFailureDetect) AND
+	    (#info.setAutoRun) THEN
+	    #send.workMem[3] += 1;
+	END_IF;
+
+	//Line 6-----------------------------------------------
+
+	IF (#send.workMem[3] > #setTimeOutSend) AND #send.flagMotion THEN
+	    #send.timeoutFailure := TRUE;
+	END_IF;
+
+	//LINHA 7-----------------------------------------------
+
+	IF (#send.workMem[3] > #setTimeOutReceive) AND #send.flagMotion THEN
+	    #send.timeoutFailure := TRUE;
+	END_IF;
+
+	//Line 8-----------------------------------------------
+
+	IF (#send.posFlag AND
+	    #info.data.getDataReady AND
+	    (NOT #receive.getDataReady)) THEN
+
+	    #receive.skid := #send.skid;
+	    #send.skid := #clearData.skid;
+
+	    #receive.recipe := #send.recipe;
+	    #send.recipe := #clearData.recipe;
+
+	    #receive.getDataReady := TRUE;
+	    #send.getDataReady := FALSE;
+	    #send.dataDelivered := TRUE;
+	ELSE
+	    #send.dataDelivered := FALSE;
+	END_IF;
+
+	//Line 9-----------------------------------------------
+
+	IF #send.workMem[1] <> 0 OR #send.workMem[2] <> 0 THEN
+	    #send.getFailureDetect := TRUE;
+	ELSE
+	    #send.getFailureDetect := FALSE;
+	END_IF;
+
+	//Line 10-----------------------------------------------
+
+	IF #info.setReset THEN
+	    #send.workMem[1] := 0;
+	END_IF;
+END_FUNCTION

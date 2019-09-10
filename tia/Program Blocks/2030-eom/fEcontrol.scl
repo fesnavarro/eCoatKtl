@@ -1,0 +1,1075 @@
+﻿FUNCTION "fEcontrol" : Void
+TITLE = fEmotor
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : eom
+NAME : '1830'
+VERSION : 0.8
+//function for motor parameter
+   VAR_INPUT 
+      location : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      parEom : REF_TO "tParameterEom";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      parent : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      lift : REF_TO "tControl";
+      translation : REF_TO "tControl";
+      autoEom : REF_TO "tAutoEom";
+      autoShipping : REF_TO "tAutoShipping";
+      controlConveyor : REF_TO "tControl";
+      autoTank : REF_TO "tAutoTank";
+      tempInt : Int;
+      tempReal : Real;
+      slotF : REF_TO "tSlot";
+      slotTank : REF_TO "tSlot";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parEom := REF("dbArchiveParEom".parEom[#index.pathParent]);
+	#parent := REF("dbArchiveEquipEom".equipmentEom[#index.pathParent]);
+	#control := REF("dbArchiveControlEom".controlEom[#index.pathParent].control[#index.acc]);
+	#translation := REF("dbArchiveControlEom".controlEom[#index.pathParent].control[1]);
+	#lift := REF("dbArchiveControlEom".controlEom[#index.pathParent].control[2]);
+	#autoEom := REF("dbArchiveAutoEom".autoEom[#index.pathParent]);
+	
+	#control^.selectedByInterface := 0;
+	REGION interface selected
+	    FOR #i := 1 TO 6 DO
+	        IF #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) AND
+	            #index.acc = "dbInterface".interface[#i].controlId THEN
+	            #control^.selectedByInterface := #i;
+	            "dbInterface".interface[#i].auxStatus[2].setSignal := TRUE;
+	            "fStatus"("dbInterface".interface[#i].auxStatus[2]);
+	        ELSIF #i >= 5 AND
+	            #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) THEN
+	                #control^.selectedByInterface := #i;
+	        END_IF;
+	    END_FOR;
+	END_REGION
+	
+	REGION automatic or manual
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..5:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.autoMan.setDelayOfAuto := 50;
+	                        #control^.autoMan.setDelayOfManual := 50;
+	                        #control^.autoMan.setPulseSelAutoMan :=
+	                        "dbInterface".interface[#control^.selectedByInterface].autoMan.setPulseSelAutoMan;
+	                        "dbInterface".interface[#control^.selectedByInterface].autoMan.getStsManual :=
+	                        #control^.autoMan.getStsManual;
+	                        #control^.autoMan.setSelAuto := #parent^.autoMan.getStsAuto;
+	                        #control^.autoMan.setSelManual := NOT #parent^.autoMan.getStsManual;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoMan"(#control^.autoMan);
+	    END_REGION
+	END_REGION
+	
+	REGION automatic and running
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..5:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.autoRun.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.autoRun.setDelayTurnOff := 50;
+	                        #control^.autoRun.setDelayTurnOn := 50;
+	                        #control^.autoRun.setPulseSelAutoRun :=
+	                        "dbInterface".interface[#control^.selectedByInterface].autoRun.setPulseSelAutoRun;
+	                        #control^.autoRun.setSelTurnOn := #parent^.autoRun.getStsAutoRun;
+	                        #control^.autoRun.setSelTurnOff := NOT #parent^.autoRun.getStsAutoRun;
+	                        #control^.autoRun.setStsAuto :=
+	                        #control^.autoMan.getStsAuto;
+	                        "dbInterface".interface[#control^.selectedByInterface].autoRun.getStsAutoRun :=
+	                        #control^.autoRun.getStsAutoRun;
+	                END_CASE;
+	        END_CASE;
+	        
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoRun"(#control^.autoRun);
+	    END_REGION
+	END_REGION
+	
+	REGION inputs from activation
+	    REGION parameters
+	        CASE #index.pathParent (*eom number*)OF
+	            1..5://
+	                CASE #index.acc (*motor number*)OF
+	                    1:
+	                        //set
+	                        #control^.inputMotorDrive.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.inputMotorDrive.setDelayFailure := 500;
+	                        #control^.inputMotorDrive.setReady :=
+	                        NOT #actual^.confirmSetupTranslation[#index.pathParent].signal AND
+	                        #actual^.confirmTriggerGearmotorTranslation[#index.pathParent].signal;
+	                        #control^.inputMotorDrive.setDelayReady := 1000;
+	                        //#motor.inputInversor.setActive := ;
+	                    2:
+	                        //set
+	                        #control^.inputMotorDrive.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.inputMotorDrive.setDelayFailure := 500;
+	                        #control^.inputMotorDrive.setReady :=
+	                        #actual^.confirmSetupTranslation[#index.pathParent].signal AND
+	                        #actual^.confirmTriggerGearmotorLift[#index.pathParent].signal;
+	                        #control^.inputMotorDrive.setDelayReady := 1000;
+	                        //#motor.inputInversor.setActive := ;
+	                END_CASE;
+	        END_CASE;
+	        
+	    END_REGION
+	    
+	    REGION call function
+	        "fInputMotorDrive"(#control^.inputMotorDrive);
+	    END_REGION
+	END_REGION
+	
+	REGION command
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..5://
+	                CASE #index.acc (*control*)OF
+	                    1..2://
+	                        //set
+	                        #control^.command.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        "fEautomatic"(index := #index,
+	                                      autoRunEnable := #control^.autoRun.getStsAutoRun,
+	                                      setAutoForward => #control^.command.setAutoForward,
+	                                      setAutoReturn => #control^.command.setAutoReturn);
+	                        
+	                        #control^.command.setRetentionManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setRetentionManForward;
+	                        
+	                        #control^.command.setRetentionManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setRetentionManReturn;
+	                        
+	                        #control^.command.setStsManual := #control^.autoMan.getStsManual;
+	                        #control^.command.setStsAutoRun := #control^.autoRun.getStsAutoRun;
+	                        
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getRetentionManForward :=
+	                        #control^.command.getRetentionManForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getRetentionManReturn :=
+	                        #control^.command.getRetentionManReturn;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getTurnOnForward :=
+	                        #control^.command.getTurnOnForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getTurnOnReturn :=
+	                        #control^.command.getTurnOnReturn;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getConditionForward :=
+	                        #control^.command.getConditionForward;
+	                        "dbInterface".interface[#control^.selectedByInterface].command.getConditionReturn :=
+	                        #control^.command.getConditionReturn;
+	                        REGION releaseRetention
+	                            IF #control^.selectedByInterface = 5 THEN
+	                                #control^.command.aux[10] := FALSE;
+	                                #control^.command.aux[11] := FALSE;
+	                            END_IF;
+	                        END_REGION
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            1://
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        REGION setIntertwatingForward
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (#autoEom^.translationPosition >= 0 AND
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMiddleDescentLift[#index.pathParent].signal)) THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingForward := FALSE;
+	                                IF #autoEom^.manualFollowing <>
+	                                    #autoEom^.translationPosition THEN
+	                                    #control^.command.setIntertwatingForward := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 0.9 AND
+	                                NOT "dbSafety".eStop5pre.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 2.1 AND
+	                                #autoEom^.translationPosition >= 0 AND
+	                                #autoEom^.translationPosition <= 16 THEN
+	                                IF ((REAL_TO_INT(#autoEom^.translationPosition) + 1) - #autoEom^.translationPosition) = 1 THEN
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 1].signal THEN
+	                                        #control^.command.setIntertwatingForward := TRUE;
+	                                    END_IF;
+	                                ELSE
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 2].signal THEN
+	                                        //#control^.command.setIntertwatingForward := TRUE;
+	                                        ;
+	                                    END_IF;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setIntertwatingReturn
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (#autoEom^.translationPosition > 0 AND
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMiddleDescentLift[#index.pathParent].signal)) OR
+	                                (#autoEom^.translationPosition = 0 AND
+	                                NOT #actual^.limitMinimumDescentLift[#index.pathParent].signal) THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 2.1 AND
+	                                #autoEom^.translationPosition > 0 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 AND
+	                                #autoEom^.translationPosition <= 0 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingReturn := FALSE;
+	                                IF #autoEom^.manualFollowing <>
+	                                    #autoEom^.translationPosition THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 1 AND
+	                                NOT "dbSafety".eStop5pre.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition <= -1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #actual^.minimumSafetyTranslation[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 2.1 AND
+	                                #autoEom^.translationPosition >= 2 AND
+	                                #autoEom^.translationPosition <= 18 THEN
+	                                IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) - 1].signal THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q  OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION temporaryManualStop
+	                            IF NOT (#control^.command.setManForward OR
+	                                #control^.command.setManReturn) THEN
+	                                #autoEom^.manualFollowing :=
+	                                #autoEom^.translationPosition;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                    2:
+	                        REGION setInterwaitingDown
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #autoEom^.translationPosition > 0 AND
+	                                #autoEom^.elevationPosition >= 2.1 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 0 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 1 AND
+	                                NOT "dbSafety".eStop5pre.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].status.getStatus THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setInterwaitingUp
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #autoEom^.elevationPosition <= 1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #translation^.outputMotorDrive.getForward OR
+	                                #translation^.outputMotorDrive.getReturn THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 1 AND
+	                                NOT "dbSafety".eStop5pre.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].status.getStatus  THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.downArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.upArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            2..3:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        REGION setIntertwatingForward
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMinimumDescentLift[#index.pathParent].signal) THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingForward := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing) THEN
+	                                    #control^.command.setIntertwatingForward := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 AND
+	                                #autoEom^.translationPosition >= 0 AND
+	                                #autoEom^.translationPosition <= 16 THEN
+	                                IF ((REAL_TO_INT(#autoEom^.translationPosition) + 1) - #autoEom^.translationPosition) = 1 THEN
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 1].signal THEN
+	                                        #control^.command.setIntertwatingForward := TRUE;
+	                                    END_IF;
+	                                ELSE
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 2].signal THEN
+	                                        //#control^.command.setIntertwatingForward := TRUE;
+	                                        ;
+	                                    END_IF;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setIntertwatingReturn
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (#autoEom^.translationPosition > 0 AND
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMinimumDescentLift[#index.pathParent].signal)) THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingReturn := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing) THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 AND
+	                                #autoEom^.translationPosition >= 2 AND
+	                                #autoEom^.translationPosition <= 18 THEN
+	                                IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) - 1].signal THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION temporaryManualStop
+	                            IF NOT (#control^.command.setManForward OR
+	                                #control^.command.setManReturn) THEN
+	                                #autoEom^.manualFollowing :=
+	                                #autoEom^.translationPosition;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                    2:
+	                        REGION setInterwaitingDown
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #autoEom^.translationPosition > 0 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 0 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setInterwaitingUp
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #autoEom^.elevationPosition <= 1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            
+	                            IF #translation^.outputMotorDrive.getForward OR
+	                                #translation^.outputMotorDrive.getReturn THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.downArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.upArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            4:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        REGION setIntertwatingForward
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMinimumDescentLift[#index.pathParent].signal) THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingForward := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing) THEN
+	                                    #control^.command.setIntertwatingForward := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[2].slot[1]);
+	                            IF ((#slotF^.info.data.getDataReady AND NOT #slotF^.info.data.getOccupied) OR
+	                                #actual^.skidDetectedAConveyor[1].signal OR
+	                                #actual^.skidDetectedBConveyor[1].signal) AND
+	                                #autoEom^.translationPosition > 17 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                                
+	                            IF #actual^.minimumSafetyTranslation[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 AND
+	                                #autoEom^.translationPosition >= 0 AND
+	                                #autoEom^.translationPosition <= 16 THEN
+	                                IF ((REAL_TO_INT(#autoEom^.translationPosition) + 1) - #autoEom^.translationPosition) = 1 THEN
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 1].signal THEN
+	                                        #control^.command.setIntertwatingForward := TRUE;
+	                                    END_IF;
+	                                ELSE
+	                                    IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) + 2].signal THEN
+	                                        //#control^.command.setIntertwatingForward := TRUE;
+	                                        ;
+	                                    END_IF;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setIntertwatingReturn
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                (NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMiddleDescentLift[#index.pathParent].signal AND
+	                                NOT #actual^.limitMinimumDescentLift[#index.pathParent].signal) THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 3 AND
+	                                #autoEom^.translationPosition <= 17 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingReturn := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing) THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition <> 2.1 AND
+	                                #autoEom^.translationPosition >= 17.1 THEN
+	                                IF #actual^.skidDetectedATank[REAL_TO_INT(#autoEom^.translationPosition) - 1].signal THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION temporaryManualStop
+	                            IF NOT (#control^.command.setManForward OR
+	                                #control^.command.setManReturn) THEN
+	                                #autoEom^.manualFollowing :=
+	                                #autoEom^.translationPosition;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                    2:
+	                        REGION setInterwaitingDown
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #autoEom^.translationPosition > 0 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 0 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            #slotF := REF("dbArchiveSlotConveyor".slotConveyor[2].slot[1]);
+	                            IF #autoEom^.translationPosition = 18 AND
+	                                (#slotF^.info.data.getDataReady AND
+	                                NOT #slotF^.info.data.getOccupied) THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setInterwaitingUp
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #autoEom^.elevationPosition <= 1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	
+	                            IF #translation^.outputMotorDrive.getForward OR
+	                                #translation^.outputMotorDrive.getReturn THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT "dbSafety".eStop7pre.Q OR
+	                                NOT "dbSafety".eStop8pre.Q OR
+	                                NOT "dbSafety".eStop9pre.Q OR
+	                                NOT "dbSafety".eStop3ecoat.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.downArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.upArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            5:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        REGION setIntertwatingForward
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #actual^.maximumSafetyTranslation[#index.pathParent].signal OR
+	                                #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingForward := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing) OR
+	                                    #actual^.maximumSafetyTranslation[#index.pathParent].signal OR
+	                                    NOT #actual^.limitMaximumClimbLift[#index.pathParent].signal THEN
+	                                    #control^.command.setIntertwatingForward := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition < 39 AND
+	                                NOT "dbSafety".eStop6pre.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setIntertwatingReturn
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #actual^.minimumSafetyTranslation[#index.pathParent].signal OR
+	                                #lift^.outputMotorDrive.getForward OR
+	                                #lift^.outputMotorDrive.getReturn OR
+	                                NOT #actual^.limitMiddleDescentLift[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingReturn := FALSE;
+	                                IF (#autoEom^.translationPosition <>
+	                                    #autoEom^.manualFollowing)  OR
+	                                    #actual^.minimumSafetyTranslation[#index.pathParent].signal OR
+	                                    NOT #actual^.limitMiddleDescentLift[#index.pathParent].signal THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF (#autoEom^.translationPosition > 38 AND
+	                                #autoEom^.elevationPosition <> 2.1 ) AND
+	                                NOT "dbSafety".eStop6pre.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION temporaryManualStop
+	                            IF NOT (#control^.command.setManForward OR
+	                                #control^.command.setManReturn) THEN
+	                                #autoEom^.manualFollowing :=
+	                                #autoEom^.translationPosition;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.rightArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.leftArrow[#control^.selectedByInterface].signal;
+	                    2:
+	                        REGION setInterwaitingDown
+	                            #control^.command.setIntertwatingForward := FALSE;
+	                            IF #autoEom^.translationPosition = 38 AND
+	                                #autoEom^.elevationPosition >= 2.1 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition = 39 AND
+	                                #autoEom^.elevationPosition >= 3 THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            #autoShipping := REF("dbArchiveAutoShipping".autoShipping[2]);
+	                            #slotF := REF("dbArchiveSlotShipping".slotShipping[2].slot[1]);
+	                            IF (#actual^.skidDetectedAShipping[2].signal OR
+	                                NOT #actual^.skidDetectedBShipping[2].signal OR
+	                                NOT #actual^.skidDetectedCShipping[2].signal) AND
+	                                #autoEom^.translationPosition = 39 AND
+	                                NOT #slotF^.loading THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingForward := FALSE;
+	                                IF #autoEom^.elevationPosition >= 3 THEN
+	                                    #control^.command.setIntertwatingForward := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition > 38.1 AND
+	                                NOT "dbSafety".eStop6pre.Q THEN
+	                                #control^.command.setIntertwatingForward := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        REGION setInterwaitingUp
+	                            #control^.command.setIntertwatingReturn := FALSE;
+	                            IF #autoEom^.translationPosition = 38 AND
+	                                #autoEom^.elevationPosition <= 1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition = 39 AND
+	                                #autoEom^.elevationPosition <= 2.1 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #translation^.outputMotorDrive.getForward OR
+	                                #translation^.outputMotorDrive.getReturn THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF NOT #actual^.positionStopTranslationTank[#index.pathParent].signal THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            #autoShipping := REF("dbArchiveAutoShipping".autoShipping[2]);
+	                            #slotF := REF("dbArchiveSlotShipping".slotShipping[2].slot[1]);
+	                            IF (#actual^.skidDetectedAShipping[2].signal OR
+	                                #actual^.skidDetectedBShipping[2].signal OR
+	                                #actual^.skidDetectedCShipping[2].signal) AND
+	                                #autoEom^.translationPosition = 39 AND
+	                                (#slotF^.loaded OR #slotF^.loading) THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            #controlConveyor := REF("dbArchiveControlConveyor".controlConveyor[6].control[1]);
+	                            IF #controlConveyor^.command.getTurnOnForward OR
+	                                #controlConveyor^.command.getTurnOnReturn AND
+	                                #autoEom^.translationPosition = 38 THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.command.setIntertwatingReturn := FALSE;
+	                                IF #autoEom^.elevationPosition <= 1 THEN
+	                                    #control^.command.setIntertwatingReturn := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                            IF #autoEom^.translationPosition > 38.1 AND
+	                                NOT "dbSafety".eStop6pre.Q THEN
+	                                #control^.command.setIntertwatingReturn := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        
+	                        #control^.command.setManForward :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManForward OR
+	                        #actual^.downArrow[#control^.selectedByInterface].signal;
+	                        
+	                        #control^.command.setManReturn :=
+	                        "dbInterface".interface[#control^.selectedByInterface].command.setManReturn OR
+	                        #actual^.upArrow[#control^.selectedByInterface].signal;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            1..4:
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        IF #actual^.safetyCrashCar[#index.pathParent].signal THEN
+	                            #control^.command.setIntertwatingForward := TRUE;
+	                        END_IF;
+	                    2:
+	                        IF #index.pathParent <> 1 AND
+	                            #actual^.safetyCrashCar[#index.pathParent - 1].signal THEN
+	                            #control^.command.setIntertwatingReturn := TRUE;
+	                        END_IF;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	
+	    REGION call function
+	        "fCommand"(#control^.command);
+	    END_REGION
+	END_REGION
+	
+	REGION running
+	    IF #control^.command.getTurnOnForward OR
+	        #control^.command.getConditionReturn THEN
+	        #parent^.noRunning := FALSE;
+	    END_IF;
+	END_REGION
+	
+	REGION power
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..3://
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        REGION low
+	                            #control^.power.setLow := FALSE;
+	                            IF #control^.command.getTurnOnForward AND
+	                                #autoEom^.translationPosition >= #autoEom^.goingTranslationPosition - 0.1 OR
+	                                #autoEom^.translationPosition <= 0 THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.command.getTurnOnReturn AND
+	                                #autoEom^.translationPosition <= #autoEom^.goingTranslationPosition + 0.1 OR
+	                                #autoEom^.translationPosition <= 0 THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.power.setLow := FALSE;
+	                                IF NOT (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                                    #actual^.remoteFastModeUD[#control^.selectedByInterface].signal) THEN
+	                                    #control^.power.setLow := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                        END_REGION
+	                        #control^.power.setAverage := (NOT #control^.autoRun.getStsAutoRun AND
+	                        (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal)) OR
+	                        #autoEom^.standard[#index.acc].averagePower;
+	                        #control^.power.setHigh := FALSE;
+	                        #control^.power.setSpeedLow := 500;
+	                        #control^.power.setSpeedAverage := 1000;
+	                        #control^.power.setSpeedHigh := 1800;
+	                    2:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        REGION low
+	                            #control^.power.setLow := FALSE;
+	                            IF #autoEom^.elevationPosition <= 1.1 AND
+	                                #control^.command.getTurnOnReturn THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #autoEom^.elevationPosition >= 2 AND
+	                                #control^.command.getTurnOnForward THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual AND
+	                                NOT (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                                #actual^.remoteFastModeUD[#control^.selectedByInterface].signal) THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        #control^.power.setAverage := (NOT #control^.autoRun.getStsAutoRun AND
+	                        (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal)) OR
+	                        #autoEom^.standard[#index.acc].averagePower;
+	                        #control^.power.setHigh := FALSE;
+	                        #control^.power.setSpeedLow := 500;
+	                        #control^.power.setSpeedAverage := 1000;
+	                        #control^.power.setSpeedHigh := 1800;
+	                END_CASE;
+	            4://
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        REGION low
+	                            #control^.power.setLow := FALSE;
+	                            IF #control^.command.getTurnOnForward AND
+	                                #autoEom^.translationPosition >= #autoEom^.goingTranslationPosition - 0.1 OR
+	                                #autoEom^.translationPosition <= 0 THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.command.getTurnOnReturn AND
+	                                #autoEom^.translationPosition <= #autoEom^.goingTranslationPosition + 0.1 OR
+	                                #autoEom^.translationPosition <= 0 THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual THEN
+	                                #control^.power.setLow := FALSE;
+	                                IF NOT (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                                    #actual^.remoteFastModeUD[#control^.selectedByInterface].signal) THEN
+	                                    #control^.power.setLow := TRUE;
+	                                END_IF;
+	                            END_IF;
+	                        END_REGION
+	                        #control^.power.setAverage := (NOT #control^.autoRun.getStsAutoRun AND
+	                        (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal)) OR
+	                        #autoEom^.standard[#index.acc].averagePower;
+	                        #control^.power.setHigh := FALSE;
+	                        #control^.power.setSpeedLow := 500;
+	                        #control^.power.setSpeedAverage := 1000;
+	                        #control^.power.setSpeedHigh := 1800;
+	                    2:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        REGION low
+	                            #control^.power.setLow := FALSE;
+	                            IF #autoEom^.elevationPosition <= 1.1 AND
+	                                #control^.command.getTurnOnReturn THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF (#autoEom^.translationPosition > 17 AND #autoEom^.elevationPosition >= 2) OR
+	                                (#autoEom^.translationPosition <= 17 AND #autoEom^.elevationPosition >= 2.1) AND
+	                                #control^.command.getTurnOnForward THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                            IF #control^.autoMan.getStsManual AND
+	                                NOT (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                                #actual^.remoteFastModeUD[#control^.selectedByInterface].signal) THEN
+	                                #control^.power.setLow := TRUE;
+	                            END_IF;
+	                        END_REGION
+	                        #control^.power.setAverage := (NOT #control^.autoRun.getStsAutoRun AND
+	                        (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal)) OR
+	                        #autoEom^.standard[#index.acc].averagePower;
+	                        #control^.power.setHigh := FALSE;
+	                        #control^.power.setSpeedLow := 500;
+	                        #control^.power.setSpeedAverage := 1000;
+	                        #control^.power.setSpeedHigh := 1800;
+	                END_CASE;
+	            5:
+	                CASE #index.acc (*control*)OF
+	                    1..2:
+	                        //set
+	                        #control^.power.setFaliureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.power.setLow := (NOT #control^.autoRun.getStsAutoRun AND
+	                        NOT (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal)) OR
+	                        #autoEom^.standard[#index.acc].lowPower;
+	                        #control^.power.setAverage := (NOT #control^.autoRun.getStsAutoRun AND
+	                        (#actual^.remoteFastModeFR[#control^.selectedByInterface].signal OR
+	                        #actual^.remoteFastModeUD[#control^.selectedByInterface].signal));(* OR
+	                        #parent^.automatic.averagePower;*)
+	                        #control^.power.setHigh := FALSE;//#parent^.automatic.highPower;
+	                        #control^.power.setSpeedLow := 500;
+	                        #control^.power.setSpeedAverage := 1000;
+	                        #control^.power.setSpeedHigh := 1800;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*parent*)OF
+	            1..4://
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        IF #index.pathParent <> 4 AND
+	                            #actual^.proximitySensor[#index.pathParent+1].signal AND
+	                            #control^.command.getConditionForward THEN
+	                            #control^.power.setLow := TRUE;
+	                        END_IF;
+	                        IF #actual^.proximitySensor[#index.pathParent].signal AND
+	                            #control^.command.getConditionReturn THEN
+	                            #control^.power.setLow := TRUE;
+	                        END_IF;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fPower"(#control^.power);
+	    END_REGION
+	END_REGION
+	
+	REGION outputs from activation
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..5://1..5
+	                CASE #index.acc (*control*)OF
+	                    1..2://1..2
+	                        //set
+	                        #control^.outputMotorDrive.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal;
+	                        #control^.outputMotorDrive.setForward :=
+	                        #control^.command.getTurnOnForward;
+	                        #control^.outputMotorDrive.setReturn :=
+	                        #control^.command.getTurnOnReturn;
+	                        #control^.outputMotorDrive.setSpeed :=
+	                        #control^.power.getSpeed;
+	                        #control^.outputMotorDrive.setResetFailure :=
+	                        #actual^.generalResetFailure.signal;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*equipment*)OF
+	            1..5://1..5
+	                CASE #index.acc (*control*)OF
+	                    1..2://1..2
+	                        IF #control^.inputMotorDrive.getReady THEN
+	                            CASE #control^.power.getSpeed OF
+	                                1800:
+	                                    #action^.speed1Eom[#index.pathParent].signal  := TRUE;
+	                                    #action^.speed2Eom[#index.pathParent].signal  := TRUE;
+	                                1000:
+	                                    #action^.speed1Eom[#index.pathParent].signal  := FALSE;
+	                                    #action^.speed2Eom[#index.pathParent].signal  := TRUE;
+	                                500:
+	                                    #action^.speed1Eom[#index.pathParent].signal  := TRUE;
+	                                    #action^.speed2Eom[#index.pathParent].signal  := FALSE;
+	                            END_CASE;
+	                            #action^.downAndReturnEom[#index.pathParent].signal  :=
+	                            #control^.outputMotorDrive.getForward;
+	                            #action^.upAndForwardEom[#index.pathParent].signal  :=
+	                            #control^.outputMotorDrive.getReturn;
+	                        END_IF;
+	                        #action^.resetFailureEom[#index.pathParent].signal  :=
+	                        #control^.outputMotorDrive.getResetFailure;
+	                END_CASE;
+	        END_CASE;
+	        CASE #index.pathParent (*equipment*)OF
+	            1..5://1..5
+	                CASE #index.acc (*control*)OF
+	                    1:
+	                        IF #control^.outputMotorDrive.getStart THEN
+	                            #action^.setParameterEom[#index.pathParent].signal  := FALSE;
+	                            #action^.safetyActionEom[#index.pathParent].signal  := FALSE;
+	                        END_IF;
+	                    2:
+	                        IF #control^.outputMotorDrive.getStart THEN
+	                            #action^.setParameterEom[#index.pathParent].signal  := TRUE;
+	                            #action^.safetyActionEom[#index.pathParent].signal  := TRUE;
+	                        END_IF;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fOutputMotorDrive"(#control^.outputMotorDrive);
+	    END_REGION
+	END_REGION
+END_FUNCTION
+

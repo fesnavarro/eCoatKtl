@@ -1,0 +1,64 @@
+﻿FUNCTION "fInputValve" : Void
+TITLE = fInputCil
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '518'
+VERSION : 0.8
+//Function to atribute Cil input parameters
+   VAR_IN_OUT 
+      inputValve : "tInputValve";
+   END_VAR
+
+
+BEGIN
+	(*Default parameters of inputCil function*)
+	//#inputValv.setDelayOfAdvanced := ;
+	//#inputValv.setDelayOfReturned := ;
+	//#inputValv.setMagneticA1 := ;
+	//#inputValv.setMagneticA2 := ;
+	//#inputValv.setMagneticB1 := ;
+	//#inputValv.setMagneticB2 := ;
+	(**)
+	//:= #inputValv.getAdvanced ;
+	//:= #inputValv.getReturned ;
+	//  
+	
+	
+	(*
+	Do not extend code more than default table
+	*)
+	
+	//Ladder line 0
+	IF #inputValve.setMagneticA1 AND #inputValve.setMagneticA2 THEN
+	    #inputValve.timeOfAdvanced(IN := TRUE,
+	                               PT := #inputValve.setDelayOfAdvanced);
+	ELSE
+	    #inputValve.timeOfAdvanced(IN := FALSE,
+	                               PT := #inputValve.setDelayOfAdvanced);
+	END_IF;
+	
+	IF #inputValve.timeOfAdvanced.Q THEN
+	    #inputValve.getAdvanced := TRUE;
+	ELSE
+	    #inputValve.getAdvanced := FALSE;
+	END_IF;
+	
+	//Ladder line 1
+	
+	IF #inputValve.setMagneticB1 AND #inputValve.setMagneticB2 THEN
+	    #inputValve.timeOfReturned(IN := TRUE,
+	                               PT := #inputValve.setDelayOfReturned);
+	ELSE
+	    #inputValve.timeOfReturned(IN := FALSE,
+	                               PT := #inputValve.setDelayOfReturned);
+	END_IF;
+	
+	IF #inputValve.timeOfReturned.Q THEN
+	    #inputValve.getReturned := TRUE;
+	ELSE
+	    #inputValve.getReturned := FALSE;
+	END_IF;
+	
+END_FUNCTION
+

@@ -1,0 +1,51 @@
+﻿FUNCTION_BLOCK "fbArchiveControlConveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      parent { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+   END_VAR
+
+   VAR 
+      controlConveyor { ExternalWritable := 'False'} : Array[1..6] of Struct
+         control { ExternalWritable := 'False'} : Array[1..3] of "tControl";
+      END_STRUCT;
+      index { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	(*#index.qty := 2;
+	#index.pathParent := #parent;
+	
+	IF NOT "FirstScan" THEN
+	    REGION saveData
+	        IF #index.acc >= #index.qty THEN
+	            #index.acc := 0;
+	        END_IF;
+	        #index.acc += 1;
+	        #formatControlConveyor[#index.pathParent].control[#index.acc].id :=
+	        #controlConveyor[#index.pathParent].control[#index.acc].id;
+	        #formatControlConveyor[#index.pathParent].control[#index.acc].autoMan :=
+	        #controlConveyor[#index.pathParent].control[#index.acc].autoMan;
+	        #formatControlConveyor[#index.pathParent].control[#index.acc].autoRun :=
+	        #controlConveyor[#index.pathParent].control[#index.acc].autoRun;
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR #index.acc := 1 TO #index.qty DO
+	            #controlConveyor[#index.pathParent].control[#index.acc].id :=
+	            #formatControlConveyor[#index.pathParent].control[#index.acc].id;
+	            #controlConveyor[#index.pathParent].control[#index.acc].autoMan :=
+	            #formatControlConveyor[#index.pathParent].control[#index.acc].autoMan;
+	            #controlConveyor[#index.pathParent].control[#index.acc].autoRun :=
+	            #formatControlConveyor[#index.pathParent].control[#index.acc].autoRun;
+	        END_FOR;
+	    END_REGION
+	END_IF;
+ automatically inserted *)
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,30 @@
+﻿TYPE "tCommand"
+TITLE = tCommand
+VERSION : 0.8
+//Command data type structure
+   STRUCT
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+      getTurnOnForward : Bool;
+      getTurnOnReturn : Bool;
+      setManForward : Bool;
+      setManReturn : Bool;
+      offForward : Bool;
+      offReturn : Bool;
+      setRetentionManForward : Bool;
+      setRetentionManReturn : Bool;
+      setFailureDetected : Bool;
+      setStsManual : Bool;
+      setStsAutoRun : Bool;
+      setIntertwatingForward : Bool;
+      setIntertwatingReturn : Bool;
+      getConditionForward : Bool;
+      getConditionReturn : Bool;
+      pulseOnRise : Array[0..4] of "tPulseOnRise";
+      aux : Array[0..17] of Bool;
+      getRetentionManForward : Bool;
+      getRetentionManReturn : Bool;
+   END_STRUCT;
+
+END_TYPE
+

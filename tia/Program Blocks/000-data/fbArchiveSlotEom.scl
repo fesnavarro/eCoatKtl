@@ -1,0 +1,13 @@
+﻿FUNCTION_BLOCK "fbArchiveSlotEom"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      slotEom : Array[1..5] of Struct
+         slot : Array[1..1] of "tSlot";
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

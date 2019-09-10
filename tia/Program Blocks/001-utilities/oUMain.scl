@@ -1,0 +1,62 @@
+﻿FUNCTION "oUMain" : Void
+TITLE = oUMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '5000'
+VERSION : 0.8
+//main control utilities
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      index : "tIndex";
+      fAutoMan : "tAutoMan";
+      fAutoRun : "tAutoRun";
+      fCommand : "tCommand";
+      fSina : "tDevSina";
+      fOutputInv : "tOutputMotorDrive";
+      fOutputValve : "tOutputValve";
+      fSpeed : "tPower";
+      fStatus : "tStatus";
+      fFailure : "tFailure";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	REGION isolation
+	    "fAutoMan_1"(#fAutoMan);
+	    "fAutoRun_1"(#fAutoRun);
+	    "fCommand_1"(#fCommand);
+	    "fOutputMotorDrive_1"(#fOutputInv);
+	    "fOutputValve_1"(#fOutputValve);
+	    "fPower_1"(#fSpeed);
+	    "fFailure_1"(#fFailure);
+	    "fStatus_1"(#fStatus);
+	END_REGION
+	REGION interfaces
+	    "fInterface"();
+	END_REGION
+	REGION powerBckup
+	    "fPowerBackup"();
+	END_REGION
+	REGION lights
+	    "fLightsSound"();
+	END_REGION
+	REGION blink
+	    "dbUtilities".blink1000ms.setConfig := 2;
+	    "dbUtilities".blink1000ms.setDelayUp := 1000;
+	    "dbUtilities".blink1000ms.setDelayDown := 1000;
+	    "dbUtilities".blink1000ms.setSignal := TRUE;
+	    "fStatus"("dbUtilities".blink1000ms);
+	    
+	    "dbUtilities".blink250ms.setConfig := 2;
+	    "dbUtilities".blink250ms.setDelayUp := 250;
+	    "dbUtilities".blink250ms.setDelayDown := 250;
+	    "dbUtilities".blink250ms.setSignal := TRUE;
+	    "fStatus"("dbUtilities".blink250ms);
+	END_REGION
+END_FUNCTION
+

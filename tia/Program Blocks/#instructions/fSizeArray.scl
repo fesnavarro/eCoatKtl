@@ -1,0 +1,27 @@
+﻿FUNCTION "fSizeArray" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_OUTPUT 
+      size : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      io_Array : Variant;
+   END_VAR
+
+   VAR_TEMP 
+      temp : UDInt;
+   END_VAR
+
+
+BEGIN
+	// get size of array
+	// if size < 0, input is not an array
+	#temp := -1;
+	
+	IF IS_ARRAY(#io_Array) THEN
+	    #temp := CountOfElements(#io_Array);
+	END_IF;
+	#size := UDINT_TO_INT(#temp);
+END_FUNCTION
+

@@ -1,0 +1,27 @@
+﻿FUNCTION "oGMain" : Void
+TITLE = oTMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '1500'
+VERSION : 0.8
+//main control tank
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveGroup".group);
+	#location := 500;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fGroup"(index := #index,
+	                location := #location);
+	END_FOR;
+END_FUNCTION
+

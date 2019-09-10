@@ -1,0 +1,8 @@
+﻿TYPE "tParameterExhaust"
+VERSION : 0.8
+   STRUCT
+      setPointTemp : Int;
+   END_STRUCT;
+
+END_TYPE
+

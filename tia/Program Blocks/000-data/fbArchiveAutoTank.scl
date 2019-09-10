@@ -1,0 +1,16 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoTank"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      autoTank { ExternalWritable := 'False'} : Array[1..25] of "tAutoTank";
+      i { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

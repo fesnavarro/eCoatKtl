@@ -1,0 +1,21 @@
+﻿TYPE "tOutputMotorDrive"
+TITLE = tOutputInv
+VERSION : 0.8
+//Inversor Output data type structure
+   STRUCT
+      setResetFailure : Bool;
+      getForward : Bool;
+      getSpeed : DInt;
+      setForward : Bool;
+      setReturn : Bool;
+      setSpeed : DInt;
+      getResetFailure : Bool;
+      getReturn : Bool;
+      getStart : Bool;
+      getStop : Bool;
+      setFailureDetected : Bool;
+      sina : "tDevSina";
+   END_STRUCT;
+
+END_TYPE
+

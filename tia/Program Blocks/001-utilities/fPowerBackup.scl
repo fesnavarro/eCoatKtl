@@ -1,0 +1,28 @@
+﻿FUNCTION "fPowerBackup" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+
+BEGIN
+	REGION autoResetDrive
+	    IF "=ecoat-powerLineOn" OR "=ecoat-powerBackupOn" THEN
+	        "dbUtilities".pulseOnRise[1].setSignal := TRUE;
+	    ELSE
+	        "dbUtilities".pulseOnRise[1].setSignal := FALSE;
+	    END_IF;
+	    
+	    "fPulseOnRise"("dbUtilities".pulseOnRise[1]);
+	    
+	    "dbUtilities".powerBackupEnable.setConfig := 0;
+	    "dbUtilities".powerBackupEnable.setSignal := "dbUtilities".pulseOnRise[1].getSignal;
+	    "dbUtilities".powerBackupEnable.setDelayUp := 0;
+	    "dbUtilities".powerBackupEnable.setDelayDown := 45000;
+	    "fStatus"("dbUtilities".powerBackupEnable);
+	    
+	    "dbUtilities".autoReset.setConfig := 2;
+	    "dbUtilities".autoReset.setSignal := "dbUtilities".powerBackupEnable.getStatus;
+	    "dbUtilities".autoReset.setDelayUp := 1000;
+	    "dbUtilities".autoReset.setDelayDown := 1000;
+	    "fStatus"("dbUtilities".autoReset);
+	END_REGION
+END_FUNCTION
+

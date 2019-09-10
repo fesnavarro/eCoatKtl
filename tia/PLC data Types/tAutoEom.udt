@@ -1,0 +1,22 @@
+﻿TYPE "tAutoEom"
+VERSION : 0.8
+   STRUCT
+      "standard" : Array[1..2] of "tAutoStandard";
+      atHome : Bool;
+      homePosition : Real;
+      translationPosition : Real;
+      elevationPosition : Real;
+      mission : Int;
+      goingTranslationPosition : Real;
+      goingElevationPosition : Real;
+      toPosition : Real;
+      fromPosition : Real;
+      findPosition : Bool;
+      manualFollowing : Real;
+      stoppedTime : "tStatus";
+      pulseOnRise : Array[1..4] of "tPulseOnRise";
+      status : Array[1..4] of "tStatus";
+   END_STRUCT;
+
+END_TYPE
+

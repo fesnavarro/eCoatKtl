@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveParEom"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveParEom"
+
+BEGIN
+
+END_DATA_BLOCK
+

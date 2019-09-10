@@ -1,0 +1,17 @@
+﻿FUNCTION_BLOCK "fbArchiveControlShipping"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      controlShipping { ExternalWritable := 'False'} : Array[1..2] of Struct
+         control { ExternalWritable := 'False'} : Array[1..1] of "tControl";
+      END_STRUCT;
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

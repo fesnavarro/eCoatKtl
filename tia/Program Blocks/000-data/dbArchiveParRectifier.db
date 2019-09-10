@@ -1,0 +1,9 @@
+﻿DATA_BLOCK "dbArchiveParRectifier"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+"fbArchiveParRectifier"
+
+BEGIN
+
+END_DATA_BLOCK
+

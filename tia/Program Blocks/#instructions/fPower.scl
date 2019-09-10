@@ -1,0 +1,46 @@
+﻿FUNCTION "fPower" : Void
+TITLE = fSetSpeed
+{ S7_Optimized_Access := 'TRUE' }
+FAMILY : addOnInstructions
+NAME : '510'
+VERSION : 0.8
+//Function to set speed
+   VAR_IN_OUT 
+      power : "tPower";
+   END_VAR
+
+
+BEGIN
+	//set
+	//#speed.setAverage := (*variableFrom*);
+	//#speed.setFaliureDetected := (*variableFrom*);
+	//#speed.setLow := (*variableFrom*);
+	//#speed.setAverage := (*variableFrom*);
+	//#speed.setSpeedLow := (*variableFrom*);
+	//#speed.setSpeedAverage := (*variableFrom*);
+	//#speed.setSpeedHigh := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #speed.getSpeed ;
+	
+	//Ladder line 0
+	IF #power.setHigh AND (NOT #power.setAverage) AND
+	    (NOT #power.setLow) THEN
+	    #power.getSpeed := #power.setSpeedHigh;
+	END_IF;
+	
+	//Ladder line 1
+	IF #power.setAverage AND (NOT #power.setLow) THEN
+	    #power.getSpeed := #power.setSpeedAverage;
+	END_IF;
+	
+	//Ladder line 2
+	IF #power.setLow THEN
+	    #power.getSpeed := #power.setSpeedLow;
+	END_IF;
+	
+	//Ladder line 3
+	IF #power.setFaliureDetected THEN
+	    #power.getSpeed := 0;
+	END_IF;
+END_FUNCTION
+

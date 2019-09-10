@@ -1,0 +1,36 @@
+﻿TYPE "tDevSina"
+VERSION : 0.8
+   STRUCT
+      EnableAxis : Bool := 0;   // 0-->1; 1 = Enable the drive (OFF2 / OFF 3 are 1 in default status) (OFF1 = 0-->1)
+      AckError : Bool := 0;   // 1 = Acknowledge drive error
+      SpeedSp : Real := 0.0;   // Speed standardises with the standardisation factor
+      RefSpeed : Real := 0.0;   // Standardisation factor of speed
+      ConfigAxis : Word := 16#003F;   // binary programmed input to control all functions in the telegram without its own function block input
+      HWIDSTW : HW_IO := 0;   // Hardware Identifer set point slot
+      HWIDZSW : HW_IO := 0;   // Hardware Identifer actual value slot
+      AxisEnabled : Bool := 0;   // 1 = Drive is enabled
+      Lockout : Bool := 0;   // 1 = Drive lockout active
+      ActVelocity : Real := 0.0;   // Actual in [U/min]
+      Error : Bool := 0;   // 1 = Error  (FB and Infeed)
+      Status : Word := 0;   // Status output (7002 = FB in operation; 8xxx = error description  - read the manual)
+      DiagId : Word := 16#0000;   // Error codes of the cyclic system funtion blocks DPWR / DPRD_DAT
+      sxSendBuf : Struct   // Send buffer
+         STW1 : Word := WORD#16#0000;   // STW1sxSTW1     : STRUCT            Bit08       : BOOL:=False;              // ST-Wort-1 Bit 08 --> Reserve            Bit09       : BOOL:=False;              // ST-Wort-1 Bit 09 --> Reserve            Bit10       : BOOL:=True;               // ST-Wort-1 Bit 10 --> FÃ¼hrung durch PLC            Dir         : BOOL:=False;              // ST-Wort-1 Bit 11 --> Direction            Bit12       : BOOL:=False;              // ST-Wort-1 Bit 12 --> Haltebremse unbedingt Ã¶ffnen            Bit13       : BOOL:=False;              // ST-Wort-1 Bit 13 --> Motorpotenziometer Sollwert hÃ¶her            Bit14       : BOOL:=False;              // ST-Wort-1 Bit 14 --> Motorpotenziometer Sollwert tiefer            Bit15       : BOOL:=False;              // ST-Wort-1 Bit 15 --> Reserviert            Off1        : BOOL:=False;              // ST-Wort-1 Bit 00 --> OFF1/ON (flanks acceptance)            Off2        : BOOL:=True;               // ST-Wort-1 Bit 01 --> OFF2/ON (enable possible)            Off3        : BOOL:=True;               // ST-Wort-1 Bit 02 --> OFF3/ON (enable possible)            InvEn       : BOOL:=True;               // ST-Wort-1 Bit 03 --> Enable controller            RampEn      : BOOL:=True;               // ST-Wort-1 Bit 04 --> Ramp enable            RampOn      : BOOL:=True;               // ST-Wort-1 Bit 05 --> Ramp On            SpEn        : BOOL:=True;               // ST-Wort-1 Bit 06 --> Speed set point enable            AckFlt      : BOOL:=False;              // ST-Wort-1 Bit 07 --> Acknowledge fault         END_STRUCT;
+         Velocity : Word := WORD#16#0000;   // Setpoint of velocity
+      END_STRUCT;
+      sxRecvBuf : Struct   // Receive buffer
+         ZSW1 : Word := WORD#16#0000;   // ZSW1sxZSW1     : STRUCT            SpDev       : BOOL:=False;              // ZSW-Wort-1 = Schleppfehler im Toleranzbereich            Pcd         : BOOL:=False;              // ZSW-Wort-1 = PZD-FÃ¼hrung erreicht            Comp        : BOOL:=False;              // ZSW-Wort-1 = Zielposition erreicht            CurLim      : BOOL:=False;              // ZSW-Wort-1 = Referenzpunkt gesetzt            Brake       : BOOL:=False;              // ZSW-Wort-1 = Haltebremse Ã¶ffnen            Motover     : BOOL:=False;              // ZSW-Wort-1 = keine Warnung Ãœbertemperatur Motor            Dir         : BOOL:=False;              // ZSW-Wort-1 = Direction            Invover     : BOOL:=False;              // ZSW-Wort-1 = keine Warnung thermische Ãœberlast Leistungsteil            Rts         : BOOL:=False;              // ZSW-Wort-1 = Ready to power up / to start            Rdy         : BOOL:=False;              // ZSW-Wort-1 = Ready to operate            IOp         : BOOL:=False;              // ZSW-Wort-1 = In operation (operation enabled)            Fault       : BOOL:=False;              // ZSW-Wort-1 = Fault present            NoOff2      : BOOL:=False;              // ZSW-Wort-1 = OFF2 inactive            NoOff3      : BOOL:=False;              // ZSW-Wort-1 = OFF3 inactive            Inhibit     : BOOL:=False;              // ZSW-Wort-1 = Power ON inhibit active             Alarm       : BOOL:=False;              // ZSW-Wort-1 = Alarm / Warning present                     END_STRUCT;
+         Velocity : Word := WORD#16#0000;   // Feedback of velocity
+      END_STRUCT;
+      piRetSFC { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;   // Status for fault analysis
+      piCount { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;   // Freely available counter variable 3
+      prVelocity { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // velocity
+      pdRecvBuf { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DWord;   // Buffer of Recv-Value
+      pdSendBuf { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DWord;   // Buffer of Send-Value
+      phLAddr { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : HW_IO;   // Start addr from the I/O process image area of mod (DEC) for DPWR_DAT/DPRD_DAT
+      swSendBuf { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..1] of Word;   // Sendepuffer
+      swRecvBuf { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..1] of Word;   // Empfangspuffer         Static variables
+   END_STRUCT;
+
+END_TYPE
+

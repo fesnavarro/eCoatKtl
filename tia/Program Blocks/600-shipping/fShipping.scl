@@ -1,0 +1,53 @@
+﻿FUNCTION "fShipping" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      location : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      autoShipping : REF_TO "tAutoShipping";
+      actual : REF_TO "tActual";
+      slot : REF_TO "tSlot";
+      action : REF_TO "tAction";
+      parShipping : REF_TO "tParameterShipping";
+      equipment : REF_TO "tEquipment";
+      i : Int;
+      ic : Int;
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parShipping := REF("dbArchiveParShipping".parShipping[#index.acc]);
+	#equipment := REF("dbArchiveEquipShipping".equipmentShipping[#index.acc]);
+	
+	#index.pathParent := #index.acc;
+	#index.acc := 0;
+	#equipment^.selectedByInterface := 0;
+	
+	REGION interface selected
+	    FOR #i := 1 TO 6 DO
+	        IF #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) AND
+	            #index.acc = "dbInterface".interface[#i].controlId THEN
+	            #equipment^.selectedByInterface := #i;
+	            "dbInterface".interface[#i].auxStatus[2].setSignal := TRUE;
+	            "fStatus"("dbInterface".interface[#i].auxStatus[2]);
+	        END_IF;
+	    END_FOR;
+	END_REGION
+	
+	REGION slots
+	    "fSizeArray"(size => #index.qty,
+	                 io_Array := "dbArchiveSlotShipping".slotShipping[#index.pathParent].slot);
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "fSSlot"(index := #index);
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

@@ -1,0 +1,14 @@
+﻿TYPE "tEquipment"
+VERSION : 0.8
+   STRUCT
+      id : Int;
+      index : "tIndex";
+      autoMan : "tAutoMan";
+      autoRun : "tAutoRun";
+      selectedByInterface : Int;
+      noRunning : Bool;
+      leading : Bool;
+   END_STRUCT;
+
+END_TYPE
+

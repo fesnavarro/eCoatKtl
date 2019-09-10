@@ -1,0 +1,21 @@
+﻿TYPE "tAutoRun"
+TITLE = tAutoRun
+VERSION : 0.8
+//AutoRun selection data type structure
+   STRUCT
+      cmdAutoRun : Bool;
+      setDelayTurnOff : DInt;
+      setDelayTurnOn : DInt;
+      setPulseSelAutoRun : Bool;
+      setSelTurnOff : Bool;
+      setSelTurnOn : Bool;
+      setFailureDetected : Bool;
+      setStsAuto : Bool;
+      getStsAutoRun : Bool;
+      timeOfAutoRun {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      pulseOnRise : Array[0..2] of "tPulseOnRise";
+      aux : Array[0..1] of Bool;
+   END_STRUCT;
+
+END_TYPE
+

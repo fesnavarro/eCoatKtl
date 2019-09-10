@@ -1,0 +1,45 @@
+﻿FUNCTION_BLOCK "fbArchiveEquipConveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR 
+      equipmentConveyor { ExternalWritable := 'False'} : Array[1..6] of "tEquipment";
+      index { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	(*#index.qty := 7;
+	IF NOT "FirstScan" THEN
+	    REGION saveData
+	        IF #index.acc >= #index.qty THEN
+	            #index.acc := 0;
+	        END_IF;
+	        #index.acc += 1;
+	        #formatEquipConveyor[#index.acc].id :=
+	        #equipmentConveyor[#index.acc].id;
+	        #formatEquipConveyor[#index.acc].autoMan :=
+	        #equipmentConveyor[#index.acc].autoMan;
+	        #formatEquipConveyor[#index.acc].autoRun :=
+	        #equipmentConveyor[#index.acc].autoRun;
+	        "dbArchiveControlConveyor"(#index.acc);
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR #index.acc := 1 TO #index.qty DO
+	            #equipmentConveyor[#index.acc].id :=
+	            #formatEquipConveyor[#index.acc].id;
+	            #equipmentConveyor[#index.acc].autoMan :=
+	            #formatEquipConveyor[#index.acc].autoMan;
+	            #equipmentConveyor[#index.acc].autoRun :=
+	            #formatEquipConveyor[#index.acc].autoRun;
+	            "dbArchiveControlConveyor"(#index.acc);
+	        END_FOR;
+	    END_REGION
+	END_IF;
+ automatically inserted *)
+END_FUNCTION_BLOCK
+

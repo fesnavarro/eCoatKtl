@@ -1,0 +1,117 @@
+﻿FUNCTION "fBautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parBoiler : REF_TO "tParameterBoiler";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      autoBoiler : REF_TO "tAutoBoiler";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parBoiler := REF("dbParBoiler".parBoiler[#index.pathParent]);
+	#equipment := REF("dbArchiveEquipBoiler".equipmentBoiler[#index.pathParent]);
+	#autoBoiler := REF("dbArchiveAutoBoiler".autoBoiler[#index.pathParent]);
+	
+	CASE #index.pathParent (*parent*)OF
+	    1:
+	        CASE #index.acc (*control*)OF
+	            2:
+	                REGION onOff
+	                    IF #actual^.temperatureOutBoiler[#index.pathParent].signal <
+	                        #parBoiler^.setPointTemp +
+	                        #parBoiler^.hysteresisOnTemp THEN //on
+	                        #autoBoiler^.standard.work := TRUE;
+	                    END_IF;
+	                    
+	                    IF #actual^.temperatureOutBoiler[#index.pathParent].signal >
+	                        #parBoiler^.setPointTemp +
+	                        #parBoiler^.hysteresisOffTemp THEN //off
+	                        #autoBoiler^.standard.work := FALSE;
+	                    END_IF;
+	                    
+	                    IF #autoBoiler^.standard.work THEN
+	                        #setAutoForward := TRUE;
+	                    ELSE
+	                        #setAutoForward := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION only high power
+	                    IF #actual^.temperatureOutBoiler[#index.pathParent].signal <
+	                        (#parBoiler^.setPointTemp +
+	                        #parBoiler^.hysteresisStageOne) THEN //only high
+	                        #autoBoiler^.standard.highPower := TRUE;
+	                        #autoBoiler^.standard.lowPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION lowOrHigh power
+	                    IF #actual^.temperatureOutBoiler[#index.pathParent].signal >
+	                        #parBoiler^.setPointTemp +
+	                        #parBoiler^.hysteresisStageOne THEN //low or high
+	                        
+	                        #autoBoiler^.standard.lowPower := TRUE;
+	                        #autoBoiler^.standard.highPower := FALSE;
+	                        
+	                        #autoBoiler^.standard.pulseOnRise.setSignal := TRUE;
+	                        
+	                        #autoBoiler^.standard.status[1].setConfig := 0;
+	                        #autoBoiler^.standard.status[1].setSignal := TRUE;
+	                        #autoBoiler^.standard.status[1].setDelayUp := 3000;  //5s to new test
+	                        #autoBoiler^.standard.status[1].setDelayDown := 6000;
+	                        
+	                        IF #autoBoiler^.standard.status[1].getStatus AND
+	                            #autoBoiler^.standard.intMem >
+	                            #actual^.temperatureOutBoiler[#index.pathParent].signal THEN
+	                            #autoBoiler^.standard.status[1].setSignal := FALSE;
+	                            #autoBoiler^.standard.highPower := TRUE;
+	                            #autoBoiler^.standard.lowPower := FALSE;
+	                        END_IF;
+	                        
+	                        IF #autoBoiler^.standard.pulseOnRise.getSignal THEN
+	                            #autoBoiler^.standard.intMem :=
+	                            REAL_TO_INT(#actual^.temperatureOutBoiler[#index.pathParent].signal);
+	                        END_IF;
+	                    ELSE
+	                        #autoBoiler^.standard.pulseOnRise.setSignal := FALSE;
+	                        #autoBoiler^.standard.status[1].setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#autoBoiler^.standard.pulseOnRise);
+	                    "fStatus"(#autoBoiler^.standard.status[1]);
+	                END_REGION
+	                REGION onlyLow power
+	                    IF #actual^.temperatureOutBoiler[#index.pathParent].signal >
+	                        #parBoiler^.setPointTemp THEN //only low
+	                        #autoBoiler^.standard.lowPower := TRUE;
+	                        #autoBoiler^.standard.highPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	            1,3:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    #setAutoForward := TRUE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+END_FUNCTION
+

@@ -1,0 +1,42 @@
+﻿FUNCTION_BLOCK "fbArchiveParOven"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR DB_SPECIFIC
+      dataParOven : Array[0..100] of DWord;
+      formatParOven { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} AT dataParOven : Array[1..4] of "tParameterOven";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => "dbParOven".ia.qty,
+	             io_Array := "dbParOven".parOven);
+	
+	"dbParOven".firstRunning.setConfig := 0;
+	"dbParOven".firstRunning.setDelayUp := 5000;
+	"dbParOven".firstRunning.setDelayDown := 0;
+	"dbParOven".firstRunning.setSignal := TRUE;
+	"fStatus"("dbParOven".firstRunning);
+	
+	IF "dbParOven".firstRunning.getStatus THEN
+	    REGION saveData
+	        IF "dbParOven".ia.acc >= "dbParOven".ia.qty THEN
+	            "dbParOven".ia.acc := 0;
+	        END_IF;
+	        "dbParOven".ia.acc += 1;
+	        #formatParOven["dbParOven".ia.acc] :=
+	        "dbParOven".parOven["dbParOven".ia.acc];
+	    END_REGION
+	ELSE
+	    REGION retrieveData
+	        FOR "dbParOven".ia.acc := 1 TO "dbParOven".ia.qty DO
+	            "dbParOven".parOven["dbParOven".ia.acc] :=
+	            #formatParOven["dbParOven".ia.acc];
+	        END_FOR;
+	    END_REGION
+	END_IF;
+END_FUNCTION_BLOCK
+

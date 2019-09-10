@@ -1,0 +1,91 @@
+﻿FUNCTION "fHautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parExhaust : REF_TO "tParameterExhaust";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      controlOven : REF_TO "tControl";
+      controlTank : REF_TO "tControl";
+      temp : Int;
+      i : Int;
+      autoExhaust : REF_TO "tAutoExhaust";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parExhaust := REF("dbParExhaust".parExhaust[#index.pathParent]);
+	#autoExhaust := REF("dbArchiveAutoExhaust".autoExhaust[#index.pathParent]);
+	
+	CASE #index.pathParent (*parent*)OF
+	    1:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                #autoExhaust^.standard.forward := FALSE;
+	                FOR #i := 1 TO 2 DO
+	                    #controlTank := REF("dbArchiveControlTank".controlTank[#i].control[6]);
+	                    IF #controlTank^.outputMotorDrive.getStart OR
+	                        #actual^.temperatureTank[#i].signal >
+	                        #parExhaust^.setPointTemp THEN
+	                        #autoExhaust^.standard.forward := TRUE;
+	                    END_IF;
+	                END_FOR;
+	                #setAutoForward := #autoExhaust^.standard.forward;
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	    2:
+	        CASE #index.acc (*control*)OF
+	            1..2:
+	                #autoExhaust^.standard.forward := FALSE;
+	                FOR #i := 5 TO 6 DO
+	                    #controlTank := REF("dbArchiveControlTank".controlTank[#i].control[6]);
+	                    IF #controlTank^.outputMotorDrive.getStart OR
+	                        #actual^.temperatureTank[#i].signal >
+	                        #parExhaust^.setPointTemp THEN
+	                        #autoExhaust^.standard.forward := TRUE;
+	                    END_IF;
+	                END_FOR;
+	                #setAutoForward := #autoExhaust^.standard.forward;
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	    3:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                #autoExhaust^.standard.forward := FALSE;
+	                FOR #i := 1 TO 4 DO
+	                    #controlOven := REF("dbArchiveControlOven".controlOven[#i].control[1]);
+	                IF #controlOven^.outputMotorDrive.getStart OR
+	                    #actual^.temperatureOven[#i].signal >
+	                    #parExhaust^.setPointTemp THEN
+	                    #autoExhaust^.standard.forward := TRUE;
+	                END_IF;
+	            END_FOR;
+	            #setAutoForward := #autoExhaust^.standard.forward;
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+END_FUNCTION
+

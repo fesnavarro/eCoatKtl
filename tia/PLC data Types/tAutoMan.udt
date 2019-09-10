@@ -1,0 +1,22 @@
+﻿TYPE "tAutoMan"
+TITLE = tAutoMan
+VERSION : 0.8
+//Automatic and manual selection data type structure
+   STRUCT
+      cmdAuto : Bool;
+      cmdManual : Bool;
+      setDelayOfAuto : DInt;
+      setDelayOfManual : DInt;
+      setPulseSelAutoMan : Bool;
+      setSelAuto : Bool;
+      setSelManual : Bool;
+      getStsAuto : Bool;
+      getStsManual : Bool;
+      timerOfAuto {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timerOfMan {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      pulseOnRise : Array[0..1] of "tPulseOnRise";
+      aux : Array[0..1] of Bool;
+   END_STRUCT;
+
+END_TYPE
+

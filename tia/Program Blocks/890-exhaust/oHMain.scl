@@ -1,0 +1,27 @@
+﻿FUNCTION "oHMain" : Void
+TITLE = oHMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : exhaust
+NAME : '4000'
+VERSION : 0.8
+//main control exhaust
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipExhaust".equipmentExhaust);
+	#location := 890;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fexHaust"(location := #location,
+	               index := #index);
+	END_FOR;
+END_FUNCTION
+

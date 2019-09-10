@@ -1,0 +1,131 @@
+﻿ORGANIZATION_BLOCK "Main"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      tempBool : Bool;
+      tempInt : Int;
+      feedback : Array[0..5] of "tScale";
+      tempReal : Real;
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	            
+	REGION priorityCall
+	    IF "dbUtilities".ia > 12 THEN
+	        "dbUtilities".ia := 0;
+	    END_IF;
+	    
+	    "dbUtilities".ia += 1;
+	END_REGION
+	REGION structure call
+	    "fActual"();
+	    REGION eom
+	        "dbArchiveParEom"();
+	        "dbArchiveEquipEom"();
+	        "dbArchiveControlEom"();
+	        "dbArchiveAutoEom"();
+	        "dbArchiveSlotEom"();
+	        "oEMain"(); // Eom
+	    END_REGION
+	    CASE "dbUtilities".ia OF
+	        2..3, 6, 10..11:
+	            REGION tank
+	                "dbArchiveParTank"();
+	                "dbArchiveControlTank"();
+	                "dbArchiveAutoTank"();
+	                "dbArchiveSlotTank"();
+	                "oTMain"(); // Tank
+	            END_REGION
+	        4:
+	            REGION oven
+	                "dbArchiveParOven"();
+	                "dbArchiveEquipOven"();
+	                "dbArchiveControlOven"();
+	                "dbArchiveAutoOven"();
+	                "oOMain"(); // Oven
+	            END_REGION
+	        12:
+	            REGION boiler
+	                "dbArchiveParBoiler"();
+	                "dbArchiveEquipBoiler"();
+	                "dbArchiveControlBoiler"();
+	                "dbArchiveAutoBoiler"();
+	                "oBMain"(); // Boiler
+	            END_REGION
+	            REGION rectifier
+	                "dbArchiveParRectifier"();
+	                "dbArchiveEquipRectifier"();
+	                "dbArchiveControlRectifier"();
+	                "dbArchiveAutoRectifier"();
+	                "oRMain"(); // Rectifier
+	            END_REGION
+	        7:
+	            REGION exhaust
+	                "dbArchiveParExhaust"();
+	                "dbArchiveEquipExhaust"();
+	                "dbArchiveControlExhaust"();
+	                "dbArchiveAutoExhaust"();
+	                "oHMain"(); // Exhaust
+	            END_REGION
+	            REGION shipping
+	                "dbArchiveAutoShipping"();
+	                "dbArchiveParShipping"();
+	                "dbArchiveEquipShipping"();
+	                "dbArchiveControlShipping"();
+	                "dbArchiveSlotShipping"();
+	                "oSMain"(); // Shipping
+	            END_REGION
+	        9:
+	            REGION recipes
+	                "dbArchiveParRecipes"();
+	            END_REGION
+	        1, 5, 7, 9:
+	            REGION conveyor
+	                "dbArchiveParConveyor"();
+	                "dbArchiveEquipConveyor"();
+	                "dbArchiveAutoConveyor"();
+	                "dbArchiveSlotConveyor"();
+	                "oCMain"(); // Conveyor
+	            END_REGION
+	        4, 8:
+	            REGION door
+	                "dbArchiveParDoor"();
+	                "dbArchiveEquipDoor"();
+	                "dbArchiveControlDoor"();
+	                "dbArchiveAutoDoor"();
+	                "oDMain"(); // Door
+	            END_REGION
+	    END_CASE;
+	    "oUMain"();
+	    REGION group
+	        "dbArchiveGroup"();
+	        "dbArchiveParGroup"();
+	        "oGMain"();
+	    END_REGION
+	    REGION monitoring
+	        "oMonitoring"();
+	        "dbArchiveMonitoring"();
+	    END_REGION
+	    "fAction"();
+	END_REGION
+	REGION force and test
+	    (*
+	    #feedback[1].setInputMax := 1200;//27648;
+	    #feedback[1].setInputMin := 0;
+	    #feedback[1].setScaleMax := 98;
+	    #feedback[1].setScaleMin := 0;
+	    #feedback[1].setSignal := 1900;
+	    "fScale"(#feedback[1]);
+	    
+	    #tempReal :=
+	    #feedback[1].getResult;
+	    *)
+	END_REGION
+END_ORGANIZATION_BLOCK
+

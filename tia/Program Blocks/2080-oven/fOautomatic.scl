@@ -1,0 +1,202 @@
+﻿FUNCTION "fOautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parOven : REF_TO "tParameterOven";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      autoOven : REF_TO "tAutoOven";
+      temp : Int;
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parOven := REF("dbParOven".parOven[#index.pathParent]);
+	#equipment := REF("dbArchiveEquipOven".equipmentOven[#index.pathParent]);
+	#autoOven := REF("dbArchiveAutoOven".autoOven[#index.pathParent]);
+	
+	CASE #index.pathParent (*parent*)OF
+	    1:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION onOff
+	                    IF #actual^.temperatureOven[#index.pathParent].signal <
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisOnTemp THEN //on
+	                        #autoOven^.standard.work := TRUE;
+	                    END_IF;
+	                    
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisOffTemp THEN //off
+	                        #autoOven^.standard.work := FALSE;
+	                    END_IF;
+	                    
+	                    IF #autoOven^.standard.work THEN
+	                        #setAutoForward := TRUE;
+	                    ELSE
+	                        #setAutoForward := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION only high power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal <
+	                        (#parOven^.setPointTemp +
+	                        #parOven^.hysteresisStageOne) THEN //only high
+	                        #autoOven^.standard.highPower := TRUE;
+	                        #autoOven^.standard.lowPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION lowOrHigh power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisStageOne THEN //low or high
+	                        
+	                        #autoOven^.standard.lowPower := TRUE;
+	                        #autoOven^.standard.highPower := FALSE;
+	                        
+	                        #autoOven^.standard.pulseOnRise.setSignal := TRUE;
+	                        
+	                        #autoOven^.standard.status[1].setConfig := 0;
+	                        #autoOven^.standard.status[1].setSignal := TRUE;
+	                        #autoOven^.standard.status[1].setDelayUp := 3000;  //5s to new test
+	                        #autoOven^.standard.status[1].setDelayDown := 6000;
+	                        
+	                        IF #autoOven^.standard.status[1].getStatus AND
+	                            #autoOven^.standard.intMem >
+	                            #actual^.temperatureOven[#index.pathParent].signal THEN
+	                            #autoOven^.standard.status[1].setSignal := FALSE;
+	                            #autoOven^.standard.highPower := TRUE;
+	                            #autoOven^.standard.lowPower := FALSE;
+	                        END_IF;
+	                        
+	                        IF #autoOven^.standard.pulseOnRise.getSignal THEN
+	                            #autoOven^.standard.intMem :=
+	                            REAL_TO_INT(#actual^.temperatureOven[#index.pathParent].signal);
+	                        END_IF;
+	                    ELSE
+	                        #autoOven^.standard.pulseOnRise.setSignal := FALSE;
+	                        #autoOven^.standard.status[1].setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#autoOven^.standard.pulseOnRise);
+	                    "fStatus"(#autoOven^.standard.status[1]);
+	                END_REGION
+	                REGION onlyLow power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp THEN //only low
+	                        #autoOven^.standard.lowPower := TRUE;
+	                        #autoOven^.standard.highPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	            2:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    #setAutoForward := TRUE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent (*parent*)OF
+	    2..4:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION onOff
+	                    IF #actual^.temperatureOven[#index.pathParent].signal <
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisOnTemp THEN //on
+	                        #autoOven^.standard.work := TRUE;
+	                    END_IF;
+	                    
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisOffTemp THEN //off
+	                        #autoOven^.standard.work := FALSE;
+	                    END_IF;
+	                    
+	                    IF #autoOven^.standard.work THEN
+	                        #setAutoForward := TRUE;
+	                    ELSE
+	                        #setAutoForward := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION only high power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal <
+	                        (#parOven^.setPointTemp +
+	                        #parOven^.hysteresisStageOne) THEN //only high
+	                        #autoOven^.standard.highPower := TRUE;
+	                        #autoOven^.standard.lowPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION lowOrHigh power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp +
+	                        #parOven^.hysteresisStageOne THEN //low or high
+	                        
+	                        #autoOven^.standard.lowPower := TRUE;
+	                        #autoOven^.standard.highPower := FALSE;
+	                        
+	                        #autoOven^.standard.pulseOnRise.setSignal := TRUE;
+	                        
+	                        #autoOven^.standard.status[1].setConfig := 0;
+	                        #autoOven^.standard.status[1].setSignal := TRUE;
+	                        #autoOven^.standard.status[1].setDelayUp := 5000;  //5s to new test
+	                        #autoOven^.standard.status[1].setDelayDown := 4000;
+	                        
+	                        IF #autoOven^.standard.status[1].getStatus AND
+	                            #autoOven^.standard.intMem >
+	                            #actual^.temperatureOven[#index.pathParent].signal THEN
+	                            #autoOven^.standard.status[1].setSignal := FALSE;
+	                            #autoOven^.standard.highPower := TRUE;
+	                            #autoOven^.standard.lowPower := FALSE;
+	                        END_IF;
+	                        
+	                        IF #autoOven^.standard.pulseOnRise.getSignal THEN
+	                            #autoOven^.standard.intMem :=
+	                            REAL_TO_INT(#actual^.temperatureOven[#index.pathParent].signal);
+	                        END_IF;
+	                    ELSE
+	                        #autoOven^.standard.pulseOnRise.setSignal := FALSE;
+	                        #autoOven^.standard.status[1].setSignal := FALSE;
+	                    END_IF;
+	                    "fPulseOnRise"(#autoOven^.standard.pulseOnRise);
+	                    "fStatus"(#autoOven^.standard.status[1]);
+	                END_REGION
+	                REGION onlyLow power
+	                    IF #actual^.temperatureOven[#index.pathParent].signal >
+	                        #parOven^.setPointTemp THEN //only low
+	                        #autoOven^.standard.lowPower := TRUE;
+	                        #autoOven^.standard.highPower := FALSE;
+	                    END_IF;
+	                END_REGION
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                END_IF;
+	            2:
+	                IF NOT #autoRunEnable THEN
+	                    #setAutoForward := FALSE;
+	                    #setAutoReturn := FALSE;
+	                ELSE
+	                    #setAutoForward := TRUE;
+	                END_IF;
+	        END_CASE;
+	END_CASE;
+END_FUNCTION
+

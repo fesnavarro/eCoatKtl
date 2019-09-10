@@ -1,0 +1,78 @@
+﻿FUNCTION "fOutputMotorDrive_1" : Void
+TITLE = fOutputInv
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '506'
+VERSION : 0.8
+//Function for inversor outputs
+   VAR_IN_OUT 
+      outputMotorDrive : "tOutputMotorDrive";
+   END_VAR
+
+   VAR CONSTANT 
+      equipment : DInt := 1101;
+      control : DInt := 1;
+   END_VAR
+
+
+BEGIN
+	#outputMotorDrive :=  "dbArchiveControlEom".controlEom[1].control[2].outputMotorDrive;
+	
+	//set
+	//#outputInv.setFailureDetected := (*variableFrom*);
+	//#outputInv.setForward := (*variableFrom*);
+	//#outputInv.setReturn := (*variableFrom*);
+	//#outputInv.setSpeed := (*variableFrom*);
+	//#outputInv.setResetFailure := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #outputInv.getForward ;
+	//(*variableFrom*) := #outputInv.getReturn ;
+	//(*variableFrom*) := #outputInv.getSpeed ;
+	//(*variableFrom*) := #outputInv.getStart ;
+	//(*variableFrom*) := #outputInv.getStop ;
+	//(*variableFrom*) := #outputInv.getResetFailure ;
+	
+	//Ladder line0---------
+	IF #outputMotorDrive.setResetFailure THEN
+	    #outputMotorDrive.getResetFailure := TRUE;
+	ELSE
+	    #outputMotorDrive.getResetFailure := FALSE;
+	END_IF;
+	
+	//Ladder line1---------
+	
+	//Ladder line2---------
+	IF #outputMotorDrive.setForward OR #outputMotorDrive.setReturn THEN
+	    #outputMotorDrive.getStart := TRUE;
+	ELSE
+	    #outputMotorDrive.getStart := FALSE;
+	END_IF;
+	
+	//Ladder line3---------
+	IF #outputMotorDrive.setForward THEN
+	    #outputMotorDrive.getForward := TRUE;
+	ELSE
+	    #outputMotorDrive.getForward := FALSE;
+	END_IF;
+	
+	//Ladder line4---------
+	IF #outputMotorDrive.setReturn THEN
+	    #outputMotorDrive.getReturn := TRUE;
+	ELSE
+	    #outputMotorDrive.getReturn := FALSE;
+	END_IF;
+	
+	//Ladder line5---------
+	#outputMotorDrive.getSpeed := #outputMotorDrive.setSpeed;
+	
+	//Ladder line6---------
+	
+	//Ladder line6---------
+	IF ((NOT #outputMotorDrive.setForward) AND (NOT #outputMotorDrive.setReturn)) OR (#outputMotorDrive.setFailureDetected) THEN
+	    #outputMotorDrive.getStop := TRUE;
+	ELSE
+	    #outputMotorDrive.getStop := FALSE;
+	END_IF;
+END_FUNCTION
+

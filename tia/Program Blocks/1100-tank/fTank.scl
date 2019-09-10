@@ -1,0 +1,135 @@
+﻿FUNCTION "fTank" : Void
+TITLE = fTank
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : tank
+NAME : '1502'
+VERSION : 0.8
+//Function to parameter of tank
+   VAR_INPUT 
+      location : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      parTank : REF_TO "tParameterTank";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      interface : REF_TO "tInterface";
+      i : Int;
+      equipment : REF_TO "tEquipment";
+      control : REF_TO "tControl";
+      group : REF_TO "tEquipment";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parTank := REF("dbParTank".parTank[#index.acc]);
+	#equipment := REF("dbEquipTank".equipmentTank[#index.acc]);
+	
+	#index.pathParent := #index.acc;
+	#index.acc := 0;
+	#equipment^.selectedByInterface := 0;
+	REGION groupScope
+	    CASE #index.pathParent (*parent*)OF
+	        1..13, 18..22,24..25:
+	            #group := REF("dbArchiveGroup".group[2]);
+	        14..17, 23:
+	            #group := REF("dbArchiveGroup".group[1]);
+	    END_CASE;
+	END_REGION
+	REGION interface selected
+	    FOR #i := 1 TO 6 DO
+	        IF #index.pathParent = ("dbInterface".interface[#i].equipamentId - #location) AND
+	            #index.acc = "dbInterface".interface[#i].controlId THEN
+	            #equipment^.selectedByInterface := #i;
+	            "dbInterface".interface[#i].auxStatus[2].setSignal := TRUE;
+	            "fStatus"("dbInterface".interface[#i].auxStatus[2]);
+	        END_IF;
+	    END_FOR;
+	END_REGION
+	
+	REGION automatic or manual
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..25:
+	                CASE #index.acc (*control*)OF
+	                    0:
+	                        //set
+	                        #equipment^.autoMan.setDelayOfAuto := 50;
+	                        #equipment^.autoMan.setDelayOfManual := 50;
+	                        #equipment^.autoMan.setPulseSelAutoMan :=
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoMan.setPulseSelAutoMan;
+	                        IF #group^.autoMan.getStsManual THEN
+	                            #equipment^.autoMan.setSelAuto := FALSE;
+	                            #equipment^.autoMan.setSelManual := FALSE;
+	                        ELSE
+	                            #equipment^.autoMan.setSelAuto := TRUE;
+	                            #equipment^.autoMan.setSelManual := TRUE;
+	                        END_IF;
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoMan.getStsManual :=
+	                        #equipment^.autoMan.getStsManual;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoMan"(#equipment^.autoMan);
+	    END_REGION
+	END_REGION
+	
+	REGION automatic and running
+	    REGION parameters
+	        CASE #index.pathParent (*parent*)OF
+	            1..25://
+	                CASE #index.acc (*control*)OF
+	                    0:
+	                        //set
+	                        #equipment^.autoRun.setFailureDetected :=
+	                        #actual^.generalFailureDetected.signal OR
+	                        (NOT "=ecoat-powerLineOn" AND NOT "=ecoat-powerBackupOn");
+	                        #equipment^.autoRun.setDelayTurnOff := 50;
+	                        #equipment^.autoRun.setDelayTurnOn := 50;
+	                        #equipment^.autoRun.setPulseSelAutoRun :=
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoRun.setPulseSelAutoRun;
+	                        #equipment^.autoRun.setSelTurnOn := "dbUtilities".autoReset.getStatus OR
+	                        ((#group^.autoRun.getStsAutoRun) AND NOT "dbUtilities".powerBackupEnable.getStatus);
+	                        #equipment^.autoRun.setSelTurnOff := #actual^.minimumSafetyLevel[#index.pathParent].signal OR
+	                        NOT #group^.autoRun.getStsAutoRun;
+	                        #equipment^.autoRun.setStsAuto :=
+	                        #equipment^.autoMan.getStsAuto;
+	                        "dbInterface".interface[#equipment^.selectedByInterface].autoRun.getStsAutoRun :=
+	                        #equipment^.autoRun.getStsAutoRun;
+	                END_CASE;
+	        END_CASE;
+	    END_REGION
+	    
+	    REGION call function
+	        "fAutoRun"(#equipment^.autoRun);
+	    END_REGION
+	END_REGION
+	
+	REGION controls
+	    #equipment^.leading := TRUE;
+	    "fSizeArray"(size => #index.qty,
+	                 io_Array := "dbArchiveControlTank".controlTank[#index.pathParent].control);
+	    #equipment^.noRunning := TRUE;
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "fTControl"(location := #location,
+	                    index := #index);
+	    END_FOR;
+	END_REGION
+	
+	REGION slots
+	    #index.qty := 1;
+	    FOR #index.acc := 1 TO #index.qty DO
+	        "fTSlot"(index := #index);
+	    END_FOR;
+	END_REGION
+END_FUNCTION
+

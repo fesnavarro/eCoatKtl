@@ -1,0 +1,48 @@
+﻿TYPE "tFailure"
+TITLE = tFailure
+VERSION : 0.8
+//Failure data type structure
+   STRUCT
+      generalDisable : Bool;
+      soundDisable : Bool;
+      group : Struct
+         group1 : Bool;
+         priority1 : Int;
+         group2 : Bool;
+         priority2 : Int;
+         group3 : Bool;
+         priority3 : Int;
+         group4 : Bool;
+         priority4 : Int;
+         group5 : Bool;
+         priority5 : Int;
+         group6 : Bool;
+         priority6 : Int;
+         group7 : Bool;
+         priority7 : Int;
+         group8 : Bool;
+         priority8 : Int;
+         group9 : Bool;
+         priority9 : Int;
+         group10 : Bool;
+         priority10 : Int;
+      END_STRUCT;
+      setConfig : SInt;
+      setActionA : Bool;
+      setActionB : Bool;
+      confirmA : Bool;
+      confirmB : Bool;
+      setDelay : DInt;
+      getFailureDetected : Bool;   // Failure detected
+      pulseOnRise : "tPulseOnRise";
+      setResetFailure : Bool;
+      setStatusA : Bool;
+      setStatusB : Bool;
+      stsA : Bool;
+      stsB : Bool;
+      timeOfFailure {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      aux : Array[0..5] of Bool;
+   END_STRUCT;
+
+END_TYPE
+

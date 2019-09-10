@@ -1,0 +1,13 @@
+﻿TYPE "tParameterBoiler"
+VERSION : 0.8
+   STRUCT
+      hysteresisStageOne : Int;
+      hysteresisOffTemp : Int;
+      hysteresisOnTemp : Int;
+      tempInOffset : Int;
+      tempOutOffset : Int;
+      setPointTemp : Int;
+   END_STRUCT;
+
+END_TYPE
+

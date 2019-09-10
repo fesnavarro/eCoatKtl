@@ -1,0 +1,15 @@
+﻿TYPE "tParameterEom"
+VERSION : 0.8
+   STRUCT
+      homePosition : Int;
+      position : Int;
+      mission : Int;
+      toPosition : Int;
+      fromPosition : Int;
+      loaded : Bool;
+      findPosition : Bool;
+      stoppedTime : "tStatus";
+   END_STRUCT;
+
+END_TYPE
+

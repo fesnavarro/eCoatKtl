@@ -1,0 +1,27 @@
+﻿FUNCTION "oEMain" : Void
+TITLE = oCMain
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : conveyor
+NAME : '1800'
+VERSION : 0.8
+//main control eom
+   VAR_TEMP 
+      index : "tIndex";
+      location : Int;
+      i : Int;
+   END_VAR
+
+
+BEGIN
+	"fSizeArray"(size => #index.qty,
+	             io_Array := "dbArchiveEquipEom".equipmentEom);
+	#location := 2030;
+	
+	//Call all equipment
+	FOR #index.acc := 1 TO #index.qty DO
+	    "fEom"(location := #location,
+	           index := #index);
+	END_FOR;
+END_FUNCTION
+

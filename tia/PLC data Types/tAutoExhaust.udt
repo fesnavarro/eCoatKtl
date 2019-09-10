@@ -1,0 +1,8 @@
+﻿TYPE "tAutoExhaust"
+VERSION : 0.8
+   STRUCT
+      "standard" : "tAutoStandard";
+   END_STRUCT;
+
+END_TYPE
+

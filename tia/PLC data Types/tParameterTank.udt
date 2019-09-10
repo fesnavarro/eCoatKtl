@@ -1,0 +1,13 @@
+﻿TYPE "tParameterTank"
+VERSION : 0.8
+   STRUCT
+      temperatureOffset : Int;
+      setPointTemp : Int;
+      hysteresisOnTemp : Int;
+      hysteresisOffTemp : Int;
+      timeOpenReplacement : Int;
+      timeBreakReplacement : Int;
+   END_STRUCT;
+
+END_TYPE
+

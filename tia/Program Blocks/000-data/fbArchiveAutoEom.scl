@@ -1,0 +1,15 @@
+﻿FUNCTION_BLOCK "fbArchiveAutoEom"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR RETAIN
+      autoEom : Array[1..5] of "tAutoEom";
+   END_VAR
+
+   VAR_TEMP 
+      tempInt : Int;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION_BLOCK
+

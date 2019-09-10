@@ -1,0 +1,224 @@
+﻿FUNCTION "fCommand_1" : Void
+TITLE = fCommand
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '502'
+VERSION : 0.8
+//Function for system commands
+   VAR_IN_OUT 
+      command : "tCommand";
+   END_VAR
+
+   VAR CONSTANT 
+      equipment : DInt := 1101;
+      control : DInt := 1;
+   END_VAR
+
+
+BEGIN
+	#command := "dbArchiveControlEom".controlEom[1].control[2].command;
+	
+	//set
+	//#command.setFailureDetected := (*variableFrom*);
+	//#command.setAutoForward := (*variableFrom*);
+	//#command.setAutoReturn := (*variableFrom*);
+	//#command.setIntertwatingForward := (*variableFrom*);
+	//#command.setIntertwatingReturn := (*variableFrom*);
+	//#command.setManForward := (*variableFrom*);
+	//#command.setManReturn := (*variableFrom*);
+	//#command.setRetentionManForward := (*variableFrom*);
+	//#command.setRetentionManReturn := (*variableFrom*);
+	//#command.setStsManual := (*variableFrom*);
+	//#command.setStsAutoRun := (*variableFrom*);
+	//get
+	//(*variableFrom*) := #command.getTurnOnForward ;
+	//(*variableFrom*) := #command.getTurnOnReturn ;
+	
+	
+	IF #command.setRetentionManForward THEN
+	    #command.pulseOnRise[2].setSignal := TRUE;
+	ELSE
+	    #command.pulseOnRise[2].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#command.pulseOnRise[2]);
+	
+	IF #command.pulseOnRise[2].getSignal AND NOT #command.aux[10] THEN
+	    #command.aux[10] := TRUE;
+	ELSIF #command.pulseOnRise[2].getSignal AND #command.aux[10] THEN
+	    #command.aux[10] := FALSE;
+	END_IF;
+	
+	IF #command.setRetentionManReturn THEN
+	    #command.pulseOnRise[3].setSignal := TRUE;
+	ELSE
+	    #command.pulseOnRise[3].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#command.pulseOnRise[3]);
+	
+	IF #command.pulseOnRise[3].getSignal AND NOT #command.aux[11] THEN
+	    #command.aux[11] := TRUE;
+	ELSIF #command.pulseOnRise[3].getSignal AND #command.aux[11] THEN
+	    #command.aux[11] := FALSE;
+	    
+	END_IF;
+	
+	//Ladder line 0
+	// Moved to ladder line 5
+	
+	//Ladder line 1
+	IF #command.setStsAutoRun AND #command.setAutoForward AND
+	    NOT #command.aux[1] THEN
+	    #command.aux[3] := TRUE;
+	ELSE
+	    #command.aux[3] := FALSE;
+	END_IF;
+	
+	IF #command.setStsManual AND #command.aux[10] AND
+	    #command.setManForward AND NOT #command.aux[1] THEN
+	    
+	    #command.pulseOnRise[0].setSignal := TRUE;
+	ELSE
+	    #command.pulseOnRise[0].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#command.pulseOnRise[0]);
+	
+	IF #command.pulseOnRise[0].getSignal AND #command.aux[0] THEN
+	    #command.offForward := TRUE;
+	ELSE
+	    #command.offForward := FALSE;
+	END_IF;
+	
+	
+	IF #command.offForward AND NOT #command.setManForward AND
+	    NOT #command.setManReturn AND NOT #command.aux[1] THEN
+	    #command.aux[4] := TRUE;
+	ELSE
+	    #command.aux[4] := FALSE;
+	END_IF;
+	
+	IF #command.pulseOnRise[0].getSignal AND NOT #command.aux[0] AND
+	    NOT #command.setManReturn AND NOT #command.aux[1] THEN
+	    #command.aux[5] := TRUE;
+	ELSE
+	    #command.aux[5] := FALSE;
+	END_IF;
+	
+	IF #command.setStsManual AND #command.aux[10] AND
+	    #command.aux[0] AND NOT #command.offForward AND
+	    NOT #command.setManReturn AND NOT #command.aux[1] THEN
+	    #command.aux[6] := TRUE;
+	ELSE
+	    #command.aux[6] := FALSE;
+	END_IF;
+	
+	
+	IF #command.setStsManual AND NOT #command.aux[10] AND
+	    #command.setManForward AND NOT #command.setManReturn AND
+	    NOT #command.aux[1] THEN
+	    #command.aux[7] := TRUE;
+	ELSE
+	    #command.aux[7] := FALSE;
+	END_IF;
+	
+	IF #command.aux[3] OR #command.aux[4] OR
+	    #command.aux[5] OR #command.aux[6] OR
+	    #command.aux[7] THEN
+	    #command.aux[0] := TRUE;
+	ELSE
+	    #command.aux[0] := FALSE;
+	END_IF;
+	
+	IF #command.aux[0] AND
+	    NOT #command.setIntertwatingForward THEN
+	    #command.getTurnOnForward := TRUE;
+	ELSE
+	    #command.getTurnOnForward := FALSE;
+	END_IF;
+	
+	//
+	
+	IF #command.setStsAutoRun AND #command.setAutoReturn AND
+	    NOT #command.aux[0] THEN
+	    #command.aux[13] := TRUE;
+	ELSE
+	    #command.aux[13] := FALSE;
+	END_IF;
+	
+	IF #command.setStsManual AND #command.aux[11] AND
+	    #command.setManReturn AND NOT #command.aux[0] THEN
+	    
+	    #command.pulseOnRise[1].setSignal := TRUE;
+	ELSE
+	    #command.pulseOnRise[1].setSignal := FALSE;
+	END_IF;
+	
+	"fPulseOnRise"(#command.pulseOnRise[1]);
+	
+	IF #command.pulseOnRise[1].getSignal AND #command.aux[1] THEN
+	    #command.offReturn := TRUE;
+	ELSE
+	    #command.offReturn := FALSE;
+	END_IF;
+	
+	
+	IF #command.offReturn AND NOT #command.setManReturn AND
+	    NOT #command.setManForward AND NOT #command.aux[0] THEN
+	    #command.aux[14] := TRUE;
+	ELSE
+	    #command.aux[14] := FALSE;
+	END_IF;
+	
+	IF #command.pulseOnRise[1].getSignal AND NOT #command.aux[1] AND
+	    NOT #command.setManForward AND NOT #command.aux[0] THEN
+	    #command.aux[15] := TRUE;
+	ELSE
+	    #command.aux[15] := FALSE;
+	END_IF;
+	
+	IF #command.setStsManual AND #command.aux[11] AND
+	    #command.aux[1] AND NOT #command.offReturn AND
+	    NOT #command.setManForward AND NOT #command.aux[0] THEN
+	    #command.aux[16] := TRUE;
+	ELSE
+	    #command.aux[16] := FALSE;
+	END_IF;
+	
+	IF #command.setStsManual AND NOT #command.aux[11] AND
+	    #command.setManReturn AND NOT #command.setManForward AND
+	    NOT #command.aux[0] THEN
+	    #command.aux[17] := TRUE;
+	ELSE
+	    #command.aux[17] := FALSE;
+	END_IF;
+	
+	IF #command.aux[13] OR #command.aux[14] OR
+	    #command.aux[15] OR #command.aux[16] OR
+	    #command.aux[17] THEN
+	    #command.aux[1] := TRUE;
+	ELSE
+	    #command.aux[1] := FALSE;
+	END_IF;
+	
+	IF #command.aux[1] AND
+	    NOT #command.setIntertwatingReturn THEN
+	    #command.getTurnOnReturn := TRUE;
+	ELSE
+	    #command.getTurnOnReturn := FALSE;
+	END_IF;
+	
+	//Clear out
+	IF #command.setFailureDetected THEN
+	    #command.getTurnOnForward := FALSE;
+	    #command.getTurnOnReturn := FALSE;
+	END_IF;
+	
+	#command.getConditionForward := NOT #command.aux[1] AND NOT #command.setIntertwatingForward;
+	#command.getConditionReturn := NOT #command.aux[0] AND NOT #command.setIntertwatingReturn;
+	#command.getRetentionManForward := #command.aux[10];
+	#command.getRetentionManReturn := #command.aux[11];
+END_FUNCTION
+

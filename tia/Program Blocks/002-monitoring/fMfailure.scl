@@ -1,0 +1,568 @@
+﻿FUNCTION "fMfailure" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      index : "tIndex";
+      failure : "tFailure";
+   END_VAR
+
+   VAR_TEMP 
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      control : REF_TO "tControl";
+      equipment : REF_TO "tEquipment";
+      it : Int;
+      iq : Int;
+      slot : REF_TO "tSlot";
+      autoEom : REF_TO "tAutoEom";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	
+	REGION config
+	    (*
+	    #failure.group.group1 := TRUE; //eom
+	    #failure.group.group2 := TRUE; //tank
+	    #failure.group.group3 := TRUE; //conveyor
+	    #failure.group.group4 := TRUE; //oven
+	    #failure.group.group5 := TRUE; //boiler
+	    #failure.group.group6 := TRUE; //rectifier
+	    #failure.group.group7 := TRUE; //door
+	    #failure.group.group8 := TRUE; //exhaust
+	    #failure.group.group9 := TRUE; //
+	    #failure.group.group10 := TRUE; //
+	    #failure.group.priority1 := ;//eom 
+	    (1-stopAll, 2-stopOnlyTranslation, 3-stopOnlyTranslationF, 4-stopOnlyTranslationR, 
+	    5-stopOnlyLift, 6-stopOnlyLiftF, 7-stopOnlyLift, 8-stopOnlyLiftF, 9-stopOnlyLiftR )
+	    #failure.group.priority2 := ;//tank (1-stopAll)
+	    #failure.group.priority3 := ;//conveyor (1-stopAll)
+	    #failure.group.priority4 := ;//oven (1-stopAll)
+	    #failure.group.priority5 := ;//boiler (1-stopAll)
+	    #failure.group.priority6 := ;//rectifier (1-stopAll)
+	    #failure.group.priority7 := ;//door (1-stopAll)
+	    #failure.group.priority8 := ;//exhaust (1-stopAll)
+	    #failure.group.priority9 := ;//safety (1-stopAll)
+	    #failure.group.priority10 := ;//(0-Standard 500ms RedLed and 500ms Buzzy, 1-500ms RedLed, 2-250ms RedLed, 2-250ms RedLed)
+	    *)
+	END_REGION
+	
+	REGION failure control
+	    REGION parameters
+	        CASE #index.acc OF
+	            1..99:
+	                #index.acc -= 0;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 500;
+	                #failure.setActionA := #actual^.circuitBreaker[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 0;
+	        END_CASE;
+	        CASE #index.acc OF
+	            101..125: //max 125
+	                #index.acc -= 100;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.minimumSafetyLevel[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 100;
+	        END_CASE;
+	        CASE #index.acc OF
+	            126..150: //max 150
+	                #index.acc -= 125;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.maximumSafetyLevel[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 125;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            151:
+	                #failure.setActionA := "feedbackContator1Pre".ERROR;
+	            152:
+	                #failure.setActionA := "feedbackContator2Pre".ERROR;
+	            153:
+	                #failure.setActionA := "feedbackContator3Pre".ERROR;
+	            154:
+	                #failure.setActionA := "feedbackContator4Pre".ERROR;
+	            155:
+	                #failure.setActionA := "feedbackContator1Ecoat".ERROR;
+	            156:
+	                #failure.setActionA := "feedbackContator2Ecoat".ERROR;
+	            157:
+	                #failure.setActionA := "feedbackContator3Ecoat".ERROR;
+	            158:
+	                #failure.setActionA := "feedbackContator4Ecoat".ERROR;
+	            159:
+	                #failure.setActionA := "feedbackContator1Oven".ERROR;
+	            160:
+	                #failure.setActionA := "feedbackContator2Oven".ERROR;
+	        END_CASE;
+	        CASE #index.acc OF
+	            151..160: //max 200
+	                #index.acc -= 150;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 150;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            201..250: //max 250
+	                #index.acc -= 200;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.powerFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 200;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            251..275: //max 300
+	                #index.acc -= 250;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 5000;
+	                #failure.setActionA := NOT #actual^.eletronicCircuitBreaker[#index.acc].status.getStatus;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 250;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            301..325: //max 350
+	                #index.acc -= 300;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.heatingResistorFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #failure.group.priority10 := 0;
+	                #index.acc += 300;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            351..375: //max 400
+	                #index.acc -= 350;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.burnerFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 350;
+	        END_CASE;
+	
+	        CASE #index.acc OF
+	            401..404: //max 404 //temperature failure
+	                #index.acc -= 400;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 45000;
+	                #equipment := REF("dbArchiveEquipOven".equipmentOven[#index.acc]);
+	                IF #equipment^.autoRun.getStsAutoRun AND
+	                    #actual^.temperatureOven[#index.acc].signal < 200 THEN
+	                    #failure.setActionA := TRUE;
+	                ELSE
+	                    #failure.setActionA := FALSE;
+	                END_IF;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 400;
+	        END_CASE;
+	
+	        CASE #index.acc OF
+	            451..475: //max 500
+	                #index.acc -= 450;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.chillerFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 450;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            501..525: //max 550
+	                #index.acc -= 500;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.airConditioningFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 500;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            551..575: //max 600
+	                #index.acc -= 550;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.inversorFailureDetectedTank[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 550;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            601..625: //max 650
+	                #index.acc -= 600;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.inversorFailureDetectedConveyor[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 600;
+	                #failure.getFailureDetected := FALSE;
+	        END_CASE;
+	        CASE #index.acc OF
+	            651..675: //max 700
+	                #index.acc -= 650;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.inversorFailureDetectedExhaust[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 650;
+	        END_CASE;
+	        CASE #index.acc OF
+	            701..725: //max 750
+	                #index.acc -= 700;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 1000;
+	                #failure.setActionA := #actual^.inversorFailureDetectedDoor[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 700;
+	        END_CASE;
+	        CASE #index.acc OF
+	            751..800: //max 800
+	                #index.acc -= 750;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                IF #index.acc > #actual^.netDiag[0].i OR
+	                    #index.acc > 50 THEN
+	                    #failure.setActionA := FALSE;
+	                ELSE
+	                    #failure.setActionA := #actual^.netDiag[#index.acc].state;
+	                END_IF;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #failure.group.priority1 := 1;
+	                #failure.group.priority4 := 1;
+	                #failure.group.priority10 := 0;
+	                #index.acc += 750;
+	        END_CASE;
+	        CASE #index.acc OF
+	            801..813,818..822,824..825:
+	                #index.acc -= 800;
+	                #control := REF("dbArchiveControlTank".controlTank[#index.acc].control[1]);
+	                #failure.setActionA := NOT #control^.inputMotorDrive.getOn AND NOT #control^.autoMan.getStsManual;
+	                #index.acc += 800;
+	            814..817,823:
+	                #index.acc -= 800;
+	                #control := REF("dbArchiveControlTank".controlTank[#index.acc].control[1]);
+	                #failure.setActionA := NOT #control^.inputMotorDrive.getOn;
+	                #index.acc += 800;
+	        END_CASE;
+	        CASE #index.acc OF
+	            801..825: //max 825
+	                #index.acc -= 800;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 800;
+	        END_CASE;
+	        CASE #index.acc OF
+	            826..850: //max 850
+	                #index.acc -= 825;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #control := REF("dbArchiveControlTank".controlTank[#index.acc].control[2]);
+	                #failure.setActionA := NOT #control^.inputMotorDrive.getOn;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 825;
+	        END_CASE;
+	        CASE #index.acc OF
+	            851..855: //max 855
+	                #index.acc -= 850;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.safetyCrashCar[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 850;
+	        END_CASE;
+	        CASE #index.acc OF
+	            856..860: //max 855
+	                #index.acc -= 855;
+	                #failure.setResetFailure :=
+	                NOT #actual^.proximitySensor[#index.acc].signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := #actual^.proximitySensor[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 855;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            871..880: //max 880 failureSensorsDoor
+	                #index.acc -= 870;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 2000;
+	                IF (#actual^.advancedADoor[#index.acc].signal AND
+	                    NOT #actual^.advancedBDoor[#index.acc].signal OR
+	                    NOT #actual^.advancedADoor[#index.acc].signal AND
+	                    #actual^.advancedBDoor[#index.acc].signal) OR
+	                    (#actual^.returnedADoor[#index.acc].signal AND
+	                    NOT #actual^.returnedBDoor[#index.acc].signal OR
+	                    NOT #actual^.returnedADoor[#index.acc].signal AND
+	                    #actual^.returnedBDoor[#index.acc].signal) OR
+	                    ((#actual^.advancedADoor[#index.acc].signal OR
+	                    #actual^.advancedBDoor[#index.acc].signal) AND
+	                    (#actual^.returnedADoor[#index.acc].signal OR
+	                    #actual^.returnedBDoor[#index.acc].signal)) THEN
+	                    #failure.setActionA := TRUE;
+	                ELSE
+	                    #failure.setActionA := FALSE;
+	                END_IF;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 870;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            881..884: //max 884
+	                #index.acc -= 880;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 34000;
+	                #control := REF("dbArchiveControlDoor".controlDoor[#index.acc].control[1]);
+	                #failure.setActionA := (#control^.command.getTurnOnForward AND
+	                (NOT #actual^.advancedADoor[#index.acc].signal OR
+	                NOT #actual^.advancedBDoor[#index.acc].signal)) OR
+	                (#control^.command.getTurnOnReturn AND
+	                (NOT #actual^.returnedADoor[#index.acc].signal OR
+	                NOT #actual^.returnedBDoor[#index.acc].signal));
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 880;
+	        END_CASE;
+	
+	        CASE #index.acc OF
+	            901..917: //max 917
+	                #index.acc -= 900;
+	                #slot := REF("dbArchiveSlotTank".SlotTank[#index.acc].slot[1]);
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 30000;
+	                #failure.setActionA := #slot^.loading;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 900;
+	        END_CASE;
+	        
+	        CASE #index.acc OF
+	            926..927: //max 927
+	                #index.acc -= 925;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 4000;
+	                #failure.setActionA :=
+	                (#actual^.skidDetectedBShipping[#index.acc].signal AND
+	                NOT #actual^.skidDetectedCShipping[#index.acc].signal) OR
+	                (NOT #actual^.skidDetectedBShipping[#index.acc].signal AND
+	                #actual^.skidDetectedCShipping[#index.acc].signal);
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 925;
+	        END_CASE;
+	        CASE #index.acc OF
+	            931..935: //max 935
+	                #index.acc -= 930;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 500;
+	                #autoEom := REF("dbArchiveAutoEom".autoEom[#index.acc]);
+	                #failure.setActionA :=
+	                (((#autoEom^.translationPosition - ROUND_REAL(#autoEom^.translationPosition))=0) AND
+	                NOT #actual^.positionStopTranslationTank[#index.acc].signal);
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 930;
+	        END_CASE;
+	        CASE #index.acc OF
+	            941:
+	                #failure.setActionA := NOT "dbSafety".eStop1pre.Q;
+	            942:
+	                #failure.setActionA := NOT "dbSafety".eStop2pre.Q;
+	            943:
+	                #failure.setActionA := NOT "dbSafety".eStop3pre.Q;
+	            944:
+	                #failure.setActionA := NOT "dbSafety".eStop4pre.Q;
+	            945:
+	                #failure.setActionA := NOT "dbSafety".eStop10pre.Q;
+	            946:
+	                #failure.setActionA := NOT "dbSafety".eStop1ecoat.Q;
+	            947:
+	                #failure.setActionA := NOT "dbSafety".eStop2ecoat.Q;
+	            948:
+	                #failure.setActionA := NOT "dbSafety".eStop3ecoat.Q;
+	            949:
+	                #failure.setActionA := NOT "dbSafety".eStop1oven.Q;
+	        END_CASE;
+	        CASE #index.acc OF
+	            941..950: //max 950
+	                #index.acc -= 940;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 940;
+	        END_CASE;
+	        CASE #index.acc OF
+	            941:
+	                #failure.setActionA := NOT "dbSafety".eStop1pre.Q;
+	            942:
+	                #failure.setActionA := NOT "dbSafety".eStop2pre.Q;
+	            943:
+	                #failure.setActionA := NOT "dbSafety".eStop3pre.Q;
+	            944:
+	                #failure.setActionA := NOT "dbSafety".eStop4pre.Q;
+	            945:
+	                #failure.setActionA := NOT "dbSafety".eStop10pre.Q;
+	            946:
+	                #failure.setActionA := NOT "dbSafety".eStop1ecoat.Q;
+	            947:
+	                #failure.setActionA := NOT "dbSafety".eStop2ecoat.Q;
+	            948:
+	                #failure.setActionA := NOT "dbSafety".eStop3ecoat.Q;
+	            949:
+	                #failure.setActionA := NOT "dbSafety".eStop1oven.Q;
+	        END_CASE;
+	        CASE #index.acc OF
+	            951:
+	                #failure.setActionA := NOT "dbSafety".eStop5pre.Q;
+	            952:
+	                #failure.setActionA := NOT "dbSafety".eStop6pre.Q;
+	            953:
+	                #failure.setActionA := NOT "dbSafety".eStop7pre.Q;
+	            954:
+	                #failure.setActionA := NOT "dbSafety".eStop8pre.Q;
+	            955:
+	                #failure.setActionA := NOT "dbSafety".eStop9pre.Q;
+	        END_CASE;
+	        CASE #index.acc OF
+	            951..960: //max 960
+	                #index.acc -= 950;
+	                #failure.setResetFailure :=
+	                #actual^.generalResetFailure.signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 950;
+	        END_CASE;
+	        CASE #index.acc OF
+	            961..969: //max 969
+	                #index.acc -= 960;
+	                #failure.setResetFailure :=
+	                NOT #actual^.resetFailure[#index.acc].signal;
+	                #failure.setConfig := 24;
+	                #failure.setDelay := 0;
+	                #failure.setActionA := FALSE;// #actual^.resetFailure[#index.acc].signal;
+	                #failure.setActionB := FALSE;
+	                #failure.setStatusA := FALSE;
+	                #failure.setStatusB := FALSE;
+	                #index.acc += 960;
+	        END_CASE;
+	    END_REGION
+	    REGION call Function
+	        "fFailure"(#failure);
+	    END_REGION
+	    //#failure.getFailureDetected := FALSE;
+	END_REGION
+	
+END_FUNCTION
+

@@ -1,0 +1,107 @@
+﻿FUNCTION "fDautomatic" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_INPUT 
+      index : "tIndex";
+      autoRunEnable : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      setAutoForward : Bool;
+      setAutoReturn : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      parDoor : REF_TO "tParameterDoor";
+      action : REF_TO "tAction";
+      actual : REF_TO "tActual";
+      equipment : REF_TO "tEquipment";
+      autoDoor : REF_TO "tAutoDoor";
+      slotConveyor : REF_TO "tSlot";
+      slotConveyorF : REF_TO "tSlot";
+      autoConveyor : REF_TO "tAutoConveyor";
+      tempBool : Bool;
+      ia : Int;
+      slotMaster : REF_TO "tSlot";
+      autoConveyorF : REF_TO "tAutoConveyor";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#action := REF("dbData".action);
+	#parDoor := REF("dbArchiveParDoor".parDoor[#index.pathParent]);
+	#equipment := REF("dbArchiveEquipDoor".equipmentDoor[#index.pathParent]);
+	#autoDoor := REF("dbArchiveAutoDoor".autoDoor[#index.pathParent]);
+	
+	
+	CASE #index.pathParent (*parent*)OF
+	    1..4:
+	        CASE #index.acc (*control*)OF
+	            1:
+	                REGION goingUpAndDown
+	                    IF #index.pathParent = 1 THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[3].slot[5]);
+	                        #slotConveyorF := REF("dbArchiveSlotConveyor".slotConveyor[3].slot[6]);
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[3]);
+	                        #autoConveyorF := REF("dbArchiveAutoConveyor".autoConveyor[3]);
+	                    END_IF;
+	                    IF #index.pathParent = 2 THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[3].slot[6]);
+	                        #slotConveyorF := REF("dbArchiveSlotConveyor".slotConveyor[4].slot[1]);
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[3]);
+	                        #autoConveyorF := REF("dbArchiveAutoConveyor".autoConveyor[4]);
+	                    END_IF;
+	                    IF #index.pathParent = 3 THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[4].slot[4]);
+	                        #slotConveyorF := REF("dbArchiveSlotConveyor".slotConveyor[5].slot[1]);
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[4]);
+	                        #autoConveyorF := REF("dbArchiveAutoConveyor".autoConveyor[5]);
+	                    END_IF;
+	                    IF #index.pathParent = 4 THEN
+	                        #slotConveyor := REF("dbArchiveSlotConveyor".slotConveyor[5].slot[1]);
+	                        #slotConveyorF := REF("dbArchiveSlotConveyor".slotConveyor[6].slot[1]);
+	                        #autoConveyor := REF("dbArchiveAutoConveyor".autoConveyor[5]);
+	                        #autoConveyorF := REF("dbArchiveAutoConveyor".autoConveyor[6]);
+	                    END_IF;
+	                    
+	                    IF (NOT #slotConveyor^.info.data.getOccupied AND
+	                        #autoConveyor^.standard.forward) AND
+	                        (#slotConveyorF^.info.data.getDataReady AND
+	                        NOT #slotConveyor^.info.data.getOccupied AND
+	                        #autoConveyorF^.standard.forward) THEN
+	                        #autoDoor^.standard.down := FALSE;
+	                        #autoDoor^.standard.up := TRUE;
+	                    END_IF;
+	                    IF (#slotConveyorF^.info.data.getDataReady AND
+	                        #slotConveyorF^.info.data.getOccupied) OR
+	                        (NOT #slotConveyorF^.info.data.getDataReady AND
+	                        NOT #slotConveyorF^.info.data.getOccupied) THEN
+	                        #autoDoor^.standard.down := TRUE;
+	                        #autoDoor^.standard.up := FALSE;
+	                    END_IF;
+	                    
+	                    #setAutoReturn := #autoDoor^.standard.up;
+	                    #setAutoForward := #autoDoor^.standard.down;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	REGION clearAll
+	    CASE #index.pathParent (*parent*)OF
+	        1..4://
+	            CASE #index.acc (*control*)OF
+	                1://
+	                    IF NOT #autoRunEnable THEN
+	                        #autoDoor^.standard.up := FALSE;
+	                        #autoDoor^.standard.down := FALSE;
+	                        #autoDoor^.standard.forward := FALSE;
+	                        #autoDoor^.standard."return" := FALSE;
+	                        #autoDoor^.standard.highPower := FALSE;
+	                        #autoDoor^.standard.averagePower := FALSE;
+	                        #autoDoor^.standard.lowPower := FALSE;
+	                    END_IF;
+	            END_CASE;
+	    END_CASE;
+	END_REGION
+END_FUNCTION
+

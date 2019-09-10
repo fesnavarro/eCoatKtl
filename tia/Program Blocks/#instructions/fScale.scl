@@ -1,0 +1,36 @@
+﻿FUNCTION "fScale" : Void
+TITLE = fScale
+{ S7_Optimized_Access := 'TRUE' }
+FAMILY : addOnInstructions
+NAME : '508'
+VERSION : 0.8
+//Function to determine scale in input and output differences
+   VAR_IN_OUT 
+      scale : "tScale";
+   END_VAR
+
+
+BEGIN
+	(*Default parameters of scale function*)
+	//#scale.setInputMax := ;
+	//#scale.setInputMin := ;
+	//#scale.setScaleMax := ;
+	//#scale.setScaleMin := ;
+	//#scale.setSignal := ;
+	(**)
+	//:= #scale.getResult ;
+	//  
+	(*Default parameters of scale function*) 
+	
+	(*
+	Do not extend code more than default table
+	*)
+	
+	#scale.rate := (#scale.setScaleMax - #scale.setScaleMin) / (#scale.setInputMax - #scale.setInputMin);
+	
+	#scale.offset := (#scale.setScaleMin) - (#scale.setInputMin * #scale.rate);
+	
+	#scale.getResult := (#scale.setSignal * #scale.rate) + #scale.offset;
+	
+END_FUNCTION
+

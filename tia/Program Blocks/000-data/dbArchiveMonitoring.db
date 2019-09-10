@@ -1,0 +1,9 @@
+﻿DATA_BLOCK "dbArchiveMonitoring"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+"fbArchiveMonitoring"
+
+BEGIN
+
+END_DATA_BLOCK
+

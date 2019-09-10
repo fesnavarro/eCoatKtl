@@ -1,0 +1,13 @@
+﻿TYPE "tInfoControl"
+VERSION : 0.8
+   STRUCT
+      data : "tData";
+      timeout : "tStatus";
+      setFailure : Bool;
+      setAutoRun : Bool;
+      setEnable : Bool;
+      setReset : Bool;
+   END_STRUCT;
+
+END_TYPE
+

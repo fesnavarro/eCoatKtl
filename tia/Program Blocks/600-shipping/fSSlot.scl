@@ -1,0 +1,172 @@
+﻿FUNCTION "fSSlot" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+   VAR_IN_OUT 
+      index : "tIndex";
+   END_VAR
+
+   VAR_TEMP 
+      autoShipping : REF_TO "tAutoShipping";
+      actual : REF_TO "tActual";
+      slot : REF_TO "tSlot";
+      info : REF_TO "tInfoControl";
+      data : REF_TO "tData";
+      autoEom : REF_TO "tAutoEom";
+      parent : REF_TO "tEquipment";
+      i : Int;
+      clearData : "tData";
+      skid : REF_TO "tSkid";
+   END_VAR
+
+
+BEGIN
+	#actual := REF("dbData".actual);
+	#slot := REF("dbArchiveSlotShipping".slotShipping[#index.pathParent].slot[#index.acc]);
+	#skid := REF("dbBuffer".skid[#slot^.info.data.skid]);
+	#autoShipping := REF("dbArchiveAutoShipping".autoShipping[#index.pathParent]);
+	#parent := REF("dbArchiveEquipShipping".equipmentShipping[#index.pathParent]);
+	#slot^.info.data.recipe := #skid^.recipe;
+	
+	CASE #index.pathParent OF
+	    1:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    IF #actual^.skidDetectedAShipping[#index.pathParent].signal OR
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal OR
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0 AND
+	                        NOT #slot^.releasedDelivery THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION loaded
+	                    IF #actual^.skidDetectedAShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal AND
+	                        #slot^.info.data.skid <> 0 AND
+	                        #skid^.recipe <> 0 THEN
+	                        #slot^.info.data.getDataReady := TRUE;
+	                        #slot^.info.data.getOccupied := TRUE;
+	                        #slot^.loaded := TRUE;
+	                        #slot^.loading := FALSE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                        #slot^.releasedTake := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION releaseToTake
+	                    IF #slot^.releaseButton AND
+	                        NOT #slot^.loading AND
+	                        #slot^.loaded THEN
+	                        #slot^.releasedTake := TRUE;
+	                    END_IF;
+	                END_REGION
+	                REGION releaseToDelivery
+	                    IF NOT #actual^.skidDetectedAShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.releasedDelivery := TRUE;
+	                    ELSE
+	                        #slot^.releasedDelivery := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	    2:
+	        CASE #index.acc OF
+	            1:
+	                REGION loading
+	                    IF #actual^.skidDetectedAShipping[#index.pathParent].signal OR
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal OR
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal OR
+	                        #slot^.info.data.skid <> 0 OR
+	                        #slot^.info.data.getDataReady OR
+	                        #skid^.recipe <> 0 AND
+	                        NOT #slot^.releasedDelivery AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.loading := TRUE;
+	                    ELSE
+	                        #slot^.loading := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION loaded
+	                    #autoEom := REF("dbArchiveAutoEom".autoEom[5]);
+	                    IF #actual^.skidDetectedAShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal AND
+	                        #slot^.info.data.skid <> 0 AND
+	                        #skid^.recipe <> 0 AND
+	                        #autoEom^.elevationPosition = 3 THEN
+	                        #slot^.info.data.getOccupied := TRUE;
+	                    END_IF;
+	                    IF #slot^.info.data.getOccupied THEN
+	                        #slot^.loaded := TRUE;
+	                    ELSE
+	                        #slot^.loaded := FALSE;
+	                    END_IF;
+	                END_REGION
+	                REGION releaseToTake
+	                    IF #slot^.releaseButton AND
+	                        #slot^.loading AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.releasedTake := TRUE;
+	                    END_IF;
+	                END_REGION
+	                REGION releaseToDelivery
+	                    IF NOT #actual^.skidDetectedAShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedBShipping[#index.pathParent].signal AND
+	                        #actual^.skidDetectedCShipping[#index.pathParent].signal AND
+	                        NOT #slot^.loaded THEN
+	                        #slot^.releasedDelivery := TRUE;
+	                    ELSE
+	                        #slot^.releasedDelivery := FALSE;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+	CASE #index.pathParent OF
+	    1:
+	        CASE #index.acc OF
+	            1:
+	                REGION infoTransfer
+	                    #info := REF("dbArchiveSlotShipping".slotShipping[#index.pathParent].slot[#index.acc].info);
+	                    #data := REF("dbArchiveSlotShipping".slotShipping[#index.pathParent].slot[#index.acc].info.data);
+	                    #autoEom := REF("dbArchiveAutoEom".autoEom[1]);
+	                    IF #autoEom^.translationPosition = -1 AND
+	                        #autoEom^.elevationPosition = 3 AND
+	                        #autoEom^.fromPosition = -1 AND
+	                        #autoEom^.goingElevationPosition = 1 THEN
+	                        #data := REF("dbArchiveSlotEom".slotEom[1].slot[1].info.data);
+	                        #info^.setReset := #actual^.generalResetFailure.signal;
+	                        #info^.setAutoRun := #parent^.autoRun.getStsAutoRun;
+	                        #info^.setFailure := FALSE;
+	                        #info^.data.noRunning := #slot^.releasedTake;
+	                        #info^.setEnable := #info^.data.getDataReady AND
+	                        #info^.data.getOccupied AND
+	                        #info^.data.noRunning;
+	                    END_IF;
+	                    
+	                    "fInfo"(send := #info^.data,
+	   receive := #data^,
+	   info := #info^);
+	                    #info^.setEnable := FALSE;
+	                END_REGION
+	        END_CASE;
+	    2:
+	        CASE #index.acc OF
+	            1:
+	                REGION temporaryClearInfo
+	                    #info := REF("dbArchiveSlotShipping".slotShipping[#index.pathParent].slot[#index.acc].info);
+	                    IF #slot^.releasedTake THEN
+	                        #info^.data := #clearData;
+	                    END_IF;
+	                END_REGION
+	        END_CASE;
+	END_CASE;
+END_FUNCTION
+

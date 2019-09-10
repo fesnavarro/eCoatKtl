@@ -1,0 +1,13 @@
+﻿DATA_BLOCK "dbBuffer"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+   VAR RETAIN
+      skid : Array[0..50] of "tSkid";
+   END_VAR
+
+
+BEGIN
+
+END_DATA_BLOCK
+

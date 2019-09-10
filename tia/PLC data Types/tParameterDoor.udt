@@ -1,0 +1,8 @@
+﻿TYPE "tParameterDoor"
+VERSION : 0.8
+   STRUCT
+      empty : Bool;
+   END_STRUCT;
+
+END_TYPE
+

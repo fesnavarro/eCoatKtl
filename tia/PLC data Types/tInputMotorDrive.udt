@@ -1,0 +1,33 @@
+﻿TYPE "tInputMotorDrive"
+TITLE = tInputInv
+VERSION : 0.8
+//Inversor Input data type structure
+   STRUCT
+      setActive : Bool;
+      setDelayActive : DInt;
+      setDelayForward : DInt;
+      setDelayFailure : DInt;
+      setDelayReady : DInt;
+      setDelayReturn : DInt;
+      getOff : Bool;
+      getFailureDetected : Bool;
+      setFailureDetected : Bool;
+      setSpeed : DInt;
+      getOn : Bool;
+      getForwardLimit : Bool;
+      getReturnLimit : Bool;
+      setReady : Bool;
+      setForwardSignal : Bool;
+      setReturnSignal : Bool;
+      chainInvStatus {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfActive {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfForward {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfFailure {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfReady {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      timeOfReturn {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      getSpeed : DInt;
+      getReady : Bool;
+   END_STRUCT;
+
+END_TYPE
+

@@ -1,0 +1,10 @@
+﻿DATA_BLOCK "dbArchiveControlRectifier"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.8
+NON_RETAIN
+"fbArchiveControlRectifier"
+
+BEGIN
+
+END_DATA_BLOCK
+

@@ -1,0 +1,79 @@
+﻿FUNCTION "fOutputValve_1" : Void
+TITLE = fOutputCil
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : fesnavarro
+FAMILY : addOnInstructions
+NAME : '519'
+VERSION : 0.8
+//Function to atribute Cil output parameters
+   VAR_IN_OUT 
+      outputValve : "tOutputValve";
+   END_VAR
+
+   VAR_TEMP 
+      tempBool : Bool;
+   END_VAR
+
+
+BEGIN
+	#outputValve := #outputValve;
+	
+	(*Default parameters of outputCil function*)
+	//#outputValv.setFailureDetected := ;
+	//#outputValv.setDelayAdvance := ;
+	//#outputValv.setDelayOfReturn := ;
+	//#outputValv.setAdvance := ;
+	//#outputValv.setReturn := ;
+	(**)
+	//:= #outputValv.getAdvance ;
+	//:= #outputValv.getReturn ;
+	//  
+	(*Default parameters of outputCil function*) 
+	
+	(*
+	Do not extend code more than default table
+	*)
+	
+	//Ladder line 0---
+	//Logic moved to ladder line 3
+	
+	//Ladder line 1---------
+	IF (#outputValve.setAdvance AND (NOT #outputValve.setReturn)) THEN
+	    #outputValve.timeOfAdvance(IN := TRUE,
+	                               PT := #outputValve.setDelayAdvance);
+	ELSE
+	    #outputValve.timeOfAdvance(IN := FALSE,
+	                               PT := #outputValve.setDelayAdvance);
+	END_IF;
+	
+	IF (#outputValve.setAdvance AND (NOT #outputValve.setReturn) AND #outputValve.timeOfAdvance.Q) THEN
+	    #outputValve.getAdvance := TRUE;
+	ELSE
+	    #outputValve.getAdvance := FALSE;
+	    
+	END_IF;
+	
+	//Ladder line 2---
+	IF (#outputValve.setReturn AND (NOT #outputValve.setAdvance)) THEN
+	    #outputValve.timeOfReturn(IN := TRUE,
+	                              PT := #outputValve.setDelayOfReturn);
+	ELSE
+	    #outputValve.timeOfReturn(IN := FALSE,
+	                              PT := #outputValve.setDelayOfReturn);
+	END_IF;
+	
+	IF (#outputValve.setReturn AND (NOT #outputValve.setAdvance) AND #outputValve.timeOfReturn.Q) THEN
+	    #outputValve.getReturn := TRUE;
+	ELSE
+	    #outputValve.getReturn := FALSE;
+	END_IF;
+	
+	//Ladder line 3---------
+	IF #outputValve.setFailureDetected THEN
+	    #outputValve.getAdvance := FALSE;
+	    #outputValve.getReturn := FALSE;
+	END_IF;
+	#tempBool := #outputValve.getAdvance;
+	#tempBool := #outputValve.getReturn;
+END_FUNCTION
+
